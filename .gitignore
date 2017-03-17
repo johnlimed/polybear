@@ -41,4 +41,4 @@ jspm_packages
 bundle.js
 
 # config files
-server/config/*
+app/server/config/*
