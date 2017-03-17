@@ -3,17 +3,30 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const path = require('path');
 const rethink = require('./server/modules/rethink');
+const http = require('http');
+const https = require('https');
+// const fs = require('fs');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = {
+	http: process.env.HTTP_PORT || 3000,
+	https: process.env.HTTPS_PORT || 8000,
+};
 
 runServer = async (appServer) => {
 	try {
+		// const options = false;
 		await rethink.runRethink();
-		appServer.listen(port, () => {
-			console.log(`Listening on *: ${port}`);
+		http.createServer(appServer).listen(port.http, () => {
+			console.log(`HTTP server listening on *: ${port.http}`)
+		});
+		// https.createServer(options, appServer).listen(port.https, () => {
+		https.createServer(appServer).listen(port.https, () => {
+			console.log(`HTTPS server listening on *: ${port.https}`);
 			console.log(`Server is on: ${process.env.NODE_ENV}`)
 		});
+		// appServer.listen(port, () => {
+		// });
 	} catch (err) {
 		console.log('Error caught while trying to run server ', err);
 	}

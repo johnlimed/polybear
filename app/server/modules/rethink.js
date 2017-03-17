@@ -5,6 +5,7 @@ const dbconfig = require('../config/dbconfig');
 const listTable = [
 	'users',
 	'rooms',
+	'webhook',
 ];
 
 runRethink = () => new Promise((resolve, reject) => {
