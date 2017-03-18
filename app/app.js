@@ -5,25 +5,32 @@ const path = require('path');
 const rethink = require('./server/modules/rethink');
 const http = require('http');
 const https = require('https');
-// const fs = require('fs');
+const fs = require('fs');
 
 const app = express();
 const port = {
 	http: process.env.HTTP_PORT || 3000,
-	https: process.env.HTTPS_PORT || 8000,
+	https: process.env.HTTPS_PORT || 4333,
 };
+
+const privateKey = fs.readFileSync('key.pem', 'utf8');
+const certificate = fs.readFileSync('server.crt', 'utf8');
 
 runServer = async (appServer) => {
 	try {
-		// const options = false;
+		const options = {
+			// ca: [fs.readFileSync('COMODORSAAddTrustCA.crt'), fs.readFileSync('COMODORSADomainValidationSecureServerCA.crt')],
+			key: privateKey,
+			cert: certificate,
+		};
 		await rethink.runRethink();
 		http.createServer(appServer).listen(port.http, () => {
-			console.log(`HTTP server listening on *: ${port.http}`)
+			console.log(`HTTP server listening on *: ${port.http}`);
 		});
-		// https.createServer(options, appServer).listen(port.https, () => {
-		https.createServer(appServer).listen(port.https, () => {
+		https.createServer(options, appServer).listen(port.https, () => {
+		// https.createServer(appServer).listen(port.https, () => {
 			console.log(`HTTPS server listening on *: ${port.https}`);
-			console.log(`Server is on: ${process.env.NODE_ENV}`)
+			console.log(`Server is on: ${process.env.NODE_ENV}`);
 		});
 		// appServer.listen(port, () => {
 		// });
