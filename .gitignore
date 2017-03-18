@@ -42,3 +42,9 @@ bundle.js
 
 # config files
 app/server/config/*
+
+#rethinkdb data
+app/rethinkdb_data
+
+#ssl certs
+app/ssl
