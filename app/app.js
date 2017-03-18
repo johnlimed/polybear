@@ -6,6 +6,8 @@ const rethink = require('./server/modules/rethink');
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
+const expressJWT = require('express-jwt');
+const teleConfig = require('./server/config/telegramConfig');
 
 const app = express();
 const port = {
@@ -13,13 +15,38 @@ const port = {
 	https: process.env.HTTPS_PORT || 4333,
 };
 
-const privateKey = fs.readFileSync('key.pem', 'utf8');
-const certificate = fs.readFileSync('server.crt', 'utf8');
+const privateKey = fs.readFileSync('ssl/key.pem', 'utf8');
+const certificate = fs.readFileSync('ssl/server.crt', 'utf8');
+const cACertificate = [fs.readFileSync('ssl/COMODORSAAddTrustCA.crt'), fs.readFileSync('ssl/COMODORSADomainValidationSecureServerCA.crt')];
+
+const serverSecret = 'my super awesome tele bot';
+
+setupWebhook = () => {
+	console.log('Setting up telegram webhook!');
+	const options = {
+		hostname: 'api.telegram.org',
+		port: 443,
+		path: encodeURI(`/bot${teleConfig.token}/setWebhook`),
+		method: 'GET',
+	};
+
+	const result = https.request(options, (httpRes) => {
+		console.log('statusCode:', httpRes.statusCode);
+		console.log('headers:', httpRes.headers);
+		httpRes.on('data', (d) => {
+			process.stdout.write(d);
+		});
+	});
+	result.on('error', (err) => {
+		console.log(err);
+	})
+	result.end();
+};
 
 runServer = async (appServer) => {
 	try {
 		const options = {
-			// ca: [fs.readFileSync('COMODORSAAddTrustCA.crt'), fs.readFileSync('COMODORSADomainValidationSecureServerCA.crt')],
+			ca: cACertificate,
 			key: privateKey,
 			cert: certificate,
 		};
@@ -28,12 +55,11 @@ runServer = async (appServer) => {
 			console.log(`HTTP server listening on *: ${port.http}`);
 		});
 		https.createServer(options, appServer).listen(port.https, () => {
-		// https.createServer(appServer).listen(port.https, () => {
 			console.log(`HTTPS server listening on *: ${port.https}`);
 			console.log(`Server is on: ${process.env.NODE_ENV}`);
+
+			setupWebhook();
 		});
-		// appServer.listen(port, () => {
-		// });
 	} catch (err) {
 		console.log('Error caught while trying to run server ', err);
 	}
@@ -44,6 +70,9 @@ app.use(cookieParser());
 // bodyparser module
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
+// use jwt tokens
+// app.use(expressJWT({ secret: serverSecret }).unless({ path: ['/register', '/login', '/'] }));
 
 // set static files
 app.use('/', express.static(path.join(__dirname, 'public')));

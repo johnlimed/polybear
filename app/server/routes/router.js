@@ -4,27 +4,32 @@ const dbconfig = require('../config/dbconfig');
 const teleConfig = require('../config/telegramConfig');
 const https = require('https');
 const http = require('http');
+const jwt = require('jsonwebtoken');
+
 // const path = require('path');
 // const utils  	= require('../modules/utils'),
 
 const router 	= express.Router();
 
 router.get('/', (req, res) => {
-  rethink.connect(dbconfig[process.env.NODE_ENV], (err, conn) => {
-    rethink.table('users').run(conn, (getErr, result) => {
-      if (getErr) {
-        res.status(500);
-        res.send({ error: getErr });
-      }
-      res.send({ data: result });
-    });
-  });
+  res.send({ data: 'hello' });
+  // rethink.connect(dbconfig[process.env.NODE_ENV], (err, conn) => {
+  //   rethink.table('users').run(conn, (getErr, result) => {
+  //     if (getErr) {
+  //       res.status(500);
+  //       res.send({ error: getErr });
+  //     }
+  //     res.send({ data: result });
+  //   });
+  // });
 });
 
 router.post('/register', (req, res) => {
   rethink.connect(dbconfig[process.env.NODE_ENV], async (err, conn) => {
     try {
       const result = await rethink.table('users').insert({ name: req.body.name }, { returnChanges: true }).run(conn);
+      // const myToken = jwt.sign({ name: req.body.name }, 'my super awesome tele bot')
+      conn.close();
       res.send({ data: result });
     } catch (tryErr) {
       console.log('Error caught in registration of user');
@@ -33,36 +38,56 @@ router.post('/register', (req, res) => {
   });
 });
 
-router.get('/getMe', (req, res) => {
-  const option = {
-    method: 'CONNECT',
-    path: `https://api.telegram.org/bot${teleConfig.token}/getME`,
-  };
-  // http.get(option, (httpRes) => {
-  //   console.log(httpRes);
-  // }).on('socket', (socket) => {
-  //   socket.emit('agentRemove');
-  // });
-  const request = http.request(option);
-  request.end();
+router.post('/login', (req, res) => {
+    rethink.connect(dbconfig[process.env.NODE_ENV], async (err, conn) => {
+      try {
+        const result = [];
+        const resultCursor = await rethink.table('users').filter({ name: req.body.name }).run(conn);
+        let myToken = '';
+        resultCursor.eachAsync((row) => {
+          console.log(row)
+          result.push(row);
+        }).then(() => {
+          console.log(result)
+          if (result.length > 0) {
+            myToken = jwt.sign({ name: req.body.name }, 'my super awesome tele bot')
+          }
+          res.send({ data: result, token: myToken });
+        }).catch((err) => {
+          res.send({ error: err });
+        });
+      } catch (tryErr) {
+        console.log('Error caught while trying to login ', tryErr);
+        res.send({ error: tryErr });
+      }
+    });
+});
 
-  request.on('connect', (result, socket, head) => {
-    console.log('Connected!')
-    socket.on('data', (chunk) => {
-      console.log(chunk.toString());
+router.get('/getMe', (req, res) => {
+  console.log('hello I am here')
+  const options = {
+    hostname: 'api.telegram.org',
+    port: 443,
+    path: encodeURI(`/bot${teleConfig.token}/getME`),
+    method: 'GET',
+  };
+  const result = https.request(options, (httpRes) => {
+    console.log('statusCode:', httpRes.statusCode);
+    console.log('headers:', httpRes.headers);
+    httpRes.on('data', (d) => {
+      res.send(d);
     });
   });
+  result.on('error', (err) => {
+    console.log(err);
+    res.send({ error: err });
+  })
+  result.end();
+});
 
-  // https.get(`https://api.telegram.org/${teleConfig}/getME`, (HTTPres) => {
-  //   console.log('statusCode:', HTTPres.statusCode);
-  //   console.log('headers:', HTTPres.headers);
-  //
-  //   HTTPres.on('data', (d) => {
-  //     res.send({ data: d });
-  //   });
-  // }).on('error', (e) => {
-  //   console.error(e);
-  // });
+router.post(`/webhook/${teleConfig.token}`, (req, res) => {
+  console.log('received a webhook from telegram!');
+  res.send(res);
 });
 
 module.exports = router;
