@@ -6,8 +6,10 @@ const rethink = require('./server/modules/rethink');
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
-const expressJWT = require('express-jwt');
 const teleConfig = require('./server/config/telegramConfig');
+const request = require('request');
+const querystring = require('querystring');
+// const expressJWT = require('express-jwt');
 
 const app = express();
 const port = {
@@ -19,28 +21,64 @@ const privateKey = fs.readFileSync('ssl/key.pem', 'utf8');
 const certificate = fs.readFileSync('ssl/server.crt', 'utf8');
 const cACertificate = [fs.readFileSync('ssl/COMODORSAAddTrustCA.crt'), fs.readFileSync('ssl/COMODORSADomainValidationSecureServerCA.crt')];
 
-const serverSecret = 'my super awesome tele bot';
+// const serverSecret = 'my super awesome tele bot';
 
 setupWebhook = () => {
 	console.log('Setting up telegram webhook!');
+	const payload = querystring.stringify({
+		url: `https://0110587d.ngrok.io/webhook/${teleConfig.token}`,
+	});
+	// const manualOptions = {
+	// 	hostname: 'api.telegram.org',
+	// 	port: 443,
+	// 	path: encodeURI(`/bot${teleConfig.token}/setWebhook`),
+	// 	url: `https://0110587d.ngrok.io/webhook/${teleConfig.token}`,
+	// 	method: 'POST',
+	// 	headers: {
+	// 		'Content-Type': 'application/json',
+	// 		'Content-Length': Buffer.byteLength(payload),
+	// 	}
+	// };
 	const options = {
-		hostname: 'api.telegram.org',
-		port: 443,
-		path: encodeURI(`/bot${teleConfig.token}/setWebhook`),
-		method: 'GET',
+		method: 'POST',
+		uri: `https://api.telegram.org/bot${teleConfig.token}/setWebhook`,
+		json: { url: `https://0110587d.ngrok.io/webhook/${teleConfig.token}` },
+		// url: `https://api.telegram.org/bot${teleConfig.token}/setWebhook`,
+		agentOptions: {
+				cert: certificate,
+				key: privateKey,
+				// Or use `pfx` property replacing `cert` and `key` when using private key, certificate and CA certs in PFX or PKCS12 format:
+				// pfx: fs.readFileSync(pfxFilePath),
+				// passphrase: 'password',
+				// securityOptions: 'SSL_OP_NO_SSLv3'
+		}
 	};
 
-	const result = https.request(options, (httpRes) => {
-		console.log('statusCode:', httpRes.statusCode);
-		console.log('headers:', httpRes.headers);
-		httpRes.on('data', (d) => {
-			process.stdout.write(d);
-		});
+	// const httpRequest = https.request(options, (httpRes) => {
+	// 	console.log('statusCode:', httpRes.statusCode);
+	// 	console.log('headers:', httpRes.headers);
+	// 	httpRes.setEncoding('utf8');
+	// 	httpRes.on('data', (d) => {
+	// 		process.stdout.write(d);
+	// 	});
+	// 	httpRes.on('end', () => {
+	// 		console.log('No more data in response.');
+	// 	});
+	// });
+	// httpRequest.on('error', (err) => {
+	// 	console.log(err);
+	// });
+	// httpRequest.write(payload);
+	// httpRequest.end();
+
+	request(options, (err, res, body) => {
+		if (err) {
+			console.log('there was an error with the request ', err);
+		} else {
+			console.log('successfully setup webhook!');
+			// console.log('success! ', body);
+		}
 	});
-	result.on('error', (err) => {
-		console.log(err);
-	})
-	result.end();
 };
 
 runServer = async (appServer) => {

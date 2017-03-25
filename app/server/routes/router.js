@@ -3,8 +3,9 @@ const rethink = require('rethinkdb');
 const dbconfig = require('../config/dbconfig');
 const teleConfig = require('../config/telegramConfig');
 const https = require('https');
-const http = require('http');
-const jwt = require('jsonwebtoken');
+const commands = require('../modules/commands');
+// const http = require('http');
+// const jwt = require('jsonwebtoken');
 
 // const path = require('path');
 // const utils  	= require('../modules/utils'),
@@ -45,12 +46,12 @@ router.post('/login', (req, res) => {
         const resultCursor = await rethink.table('users').filter({ name: req.body.name }).run(conn);
         let myToken = '';
         resultCursor.eachAsync((row) => {
-          console.log(row)
+          console.log(row);
           result.push(row);
         }).then(() => {
-          console.log(result)
+          console.log(result);
           if (result.length > 0) {
-            myToken = jwt.sign({ name: req.body.name }, 'my super awesome tele bot')
+            myToken = jwt.sign({ name: req.body.name }, 'my super awesome tele bot');
           }
           res.send({ data: result, token: myToken });
         }).catch((err) => {
@@ -64,7 +65,7 @@ router.post('/login', (req, res) => {
 });
 
 router.get('/getMe', (req, res) => {
-  console.log('hello I am here')
+  console.log('hello I am here');
   const options = {
     hostname: 'api.telegram.org',
     port: 443,
@@ -81,13 +82,29 @@ router.get('/getMe', (req, res) => {
   result.on('error', (err) => {
     console.log(err);
     res.send({ error: err });
-  })
+  });
   result.end();
 });
 
-router.post(`/webhook/${teleConfig.token}`, (req, res) => {
+router.get(`/webhook/${teleConfig.token}`, (req, res) => {
   console.log('received a webhook from telegram!');
-  res.send(res);
+  res.send('hi');
+});
+
+router.post(`/webhook/${teleConfig.token}`, async (req, res) => {
+  console.log('received a webhook from telegram!');
+  console.log(req.body);
+  const entities = req.body.message.entities;
+  const text = req.body.message.text;
+  const botCommand = req.body.message.entities[0].type === 'bot_command';
+  const bodyMessage = req.body.message;
+  console.log('entities are: ', entities);
+  console.log('is botCommand? ', botCommand);
+  if (botCommand) {
+    commands[text](bodyMessage);
+  }
+  console.log('text: ', text);
+  res.status(200).send('OK');
 });
 
 module.exports = router;

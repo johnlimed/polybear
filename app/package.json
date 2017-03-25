@@ -25,6 +25,8 @@
     "express-jwt": "^5.1.0",
     "jsonwebtoken": "^7.3.0",
     "path": "^0.12.7",
+    "querystring": "^0.2.0",
+    "request": "^2.81.0",
     "rethinkdb": "^2.3.3"
   },
   "devDependencies": {
