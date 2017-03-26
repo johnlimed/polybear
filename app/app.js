@@ -5,10 +5,10 @@ const path = require('path');
 const rethink = require('./server/modules/rethink');
 const http = require('http');
 const https = require('https');
-const fs = require('fs');
 const teleConfig = require('./server/config/telegramConfig');
 const request = require('request');
 const querystring = require('querystring');
+const certificates = require('./server/config/certificates');
 // const expressJWT = require('express-jwt');
 
 const app = express();
@@ -17,17 +17,18 @@ const port = {
 	https: process.env.HTTPS_PORT || 4333,
 };
 
-const privateKey = fs.readFileSync('ssl/key.pem', 'utf8');
-const certificate = fs.readFileSync('ssl/server.crt', 'utf8');
-const cACertificate = [fs.readFileSync('ssl/COMODORSAAddTrustCA.crt'), fs.readFileSync('ssl/COMODORSADomainValidationSecureServerCA.crt')];
+// const privateKey = fs.readFileSync('ssl/key.pem', 'utf8');
+// const certificate = fs.readFileSync('ssl/server.crt', 'utf8');
+// const cACertificate = [fs.readFileSync('ssl/COMODORSAAddTrustCA.crt'), fs.readFileSync('ssl/COMODORSADomainValidationSecureServerCA.crt')];
+const privateKey = certificates.privateKey;
+const certificate = certificates.certificate;
+const cACertificate = certificates.cACertificate;
 
 // const serverSecret = 'my super awesome tele bot';
 
 setupWebhook = () => {
 	console.log('Setting up telegram webhook!');
-	const payload = querystring.stringify({
-		url: `https://0110587d.ngrok.io/webhook/${teleConfig.token}`,
-	});
+	const payload = { url: `https://a7cd47cb.ngrok.io/webhook/${teleConfig.token}` };
 	// const manualOptions = {
 	// 	hostname: 'api.telegram.org',
 	// 	port: 443,
@@ -42,7 +43,7 @@ setupWebhook = () => {
 	const options = {
 		method: 'POST',
 		uri: `https://api.telegram.org/bot${teleConfig.token}/setWebhook`,
-		json: { url: `https://a7cd47cb.ngrok.io/webhook/${teleConfig.token}` },
+		json: payload,
 		// url: `https://api.telegram.org/bot${teleConfig.token}/setWebhook`,
 		agentOptions: {
 				cert: certificate,
