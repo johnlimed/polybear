@@ -42,7 +42,7 @@ setupWebhook = () => {
 	const options = {
 		method: 'POST',
 		uri: `https://api.telegram.org/bot${teleConfig.token}/setWebhook`,
-		json: { url: `https://0110587d.ngrok.io/webhook/${teleConfig.token}` },
+		json: { url: `https://a7cd47cb.ngrok.io/webhook/${teleConfig.token}` },
 		// url: `https://api.telegram.org/bot${teleConfig.token}/setWebhook`,
 		agentOptions: {
 				cert: certificate,

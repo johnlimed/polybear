@@ -3,9 +3,9 @@ const dbconfig = require('../config/dbconfig');
 
 // connect to rethinkdb
 const listTable = [
-	'users',
-	'rooms',
-	'webhook',
+	{ tableName: 'users', options: { primaryKey: 'teleID' } },
+	{ tableName: 'rooms', options: {} },
+	{ tableName: 'webhook', options: {} },
 ];
 
 runRethink = () => new Promise((resolve, reject) => {
@@ -26,7 +26,7 @@ runRethink = () => new Promise((resolve, reject) => {
         for (let i = 0; i < listTable.length; i += 1) {
           if (!res.includes(listTable[i])) {
             console.log(`Inserting new table ${listTable[i]} into db`);
-            rethink.db(dbconfig.dev.db).tableCreate(listTable[i]).run(conn, (createErr, createRes) => {
+            rethink.db(dbconfig.dev.db).tableCreate(listTable[i].tableName, listTable[i].options).run(conn, (createErr, createRes) => {
               if (createErr) {
 								conn.close();
                 reject(createErr);
