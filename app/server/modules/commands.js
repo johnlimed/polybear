@@ -1,6 +1,10 @@
 const rethink = require('rethinkdb');
 const dbconfig = require('../config/dbconfig');
 
+const activePolarbearGames = [];
+
+alreadyInThisGame = roomID => roomID.includes(roomID);
+
 module.exports = {
   '/register': bodyMessage => new Promise((resolve, reject) => {
     const sender = bodyMessage.from;
@@ -16,6 +20,12 @@ module.exports = {
     });
   }),
   '/start': bodyMessage => new Promise((resolve, reject) => {
-    resolve('hello')
+    const roomID = bodyMessage.from.id;
+    if (alreadyInThisGame(roomID)) {
+      // return already in game message!
+    } else {
+      activePolarbearGames.push(bodyMessage.from.id);
+    }
+    resolve('hello');
   }),
 };
