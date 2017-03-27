@@ -90,6 +90,20 @@ router.post(`/webhook/${teleConfig.token}`, async (req, res) => {
   try {
     console.log('received a webhook from telegram!');
     console.log(req.body);
+
+    rethink.connect(dbconfig[process.env.NODE_ENV], async (err, conn) => {
+      try {
+        const result = await rethink.table('webhook').insert(req.body, { returnChanges: true }).run(conn);
+        conn.close();
+        if (result.errors) {
+          console.log(`error while trying to insert webhook history into db: ${result.errors}`);
+        }
+      } catch (tryErr) {
+        console.log(`exception caught while trying to insert webhook history to db: ${tryErr}`);
+      }
+    });
+
+
     if (req.body.edited_message) {
       req.body.message = req.body.edited_message;
     }
