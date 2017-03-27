@@ -48,29 +48,45 @@ module.exports = (command, bodyMessage) => new Promise((resolve, reject) => {
       });
       break;
     }
+    case '/join':
+    case '/join@poly_polarbear_bot': {
+      break;
+    }
     case '/start':
     case '/start@poly_polarbear_bot': {
       const roomID = bodyMessage.chat.id;
       console.log(`roomID is ${roomID}, the roomArray is ${activePolarbearGames}`);
       if (alreadyRunningGame(roomID)) {
         console.log('Found a game running!');
-        httpsrequests.sendMessage(bodyMessage, 'Polar bears are already trying to start a game. Join that one!');
+        httpsrequests.sendMessage(bodyMessage, 'Polar bears are already gathering to start a game. Join that one!');
         resolve({ code: 200, msg: 'OK! already in game!' });
       } else {
         activePolarbearGames.push(roomID);
-        const setTime = 0;
+        httpsrequests.sendMessage(bodyMessage, `${sender.username} has started a game! Join to become a polar bear`);
+        const setTime = 2;
         let timeSpent = 0;
         setTimeout(() => {
+          clearTimeout();
           console.log('Times up! gotta starting game?');
+          httpsrequests.sendMessage(bodyMessage, 'The polar bears have gathered, villagers hide the children, the night has come!');
           resolve({ code: 200, msg: 'OK! Successfully started game!' });
         }, setTime * 60000);
-        setInterval(() => {
+        const id1 = setInterval(() => {
           timeSpent += 1;
           console.log(`${setTime - timeSpent} minutes left to join the game!`);
+          httpsrequests.sendMessage(bodyMessage, `${setTime - timeSpent} minutes remaining to join the polar bears!`);
+          if (setTime - timeSpent === 1) {
+            clearInterval(id1);
+          }
         }, 60000);
         console.log('after timer');
         resolve({ code: 200, msg: 'OK! Successfully started game!' });
       }
+      break;
+    }
+    case '/startgame': {
+      httpsrequests.sendMessage(bodyMessage, `No ${sender.username}`);
+      resolve({ code: 200, msg: 'OK! already in game!' });
       break;
     }
     default: {

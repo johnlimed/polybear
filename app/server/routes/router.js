@@ -5,11 +5,6 @@ const teleConfig = require('../config/telegramConfig');
 const polarbear = require('../modules/polarbear');
 const httpsrequests = require('../modules/httpsrequests');
 
-// const jwt = require('jsonwebtoken');
-
-// const path = require('path');
-// const utils  	= require('../modules/utils'),
-
 const router 	= express.Router();
 
 router.get('/', (req, res) => {
@@ -54,8 +49,8 @@ router.post('/login', (req, res) => {
             myToken = jwt.sign({ name: req.body.name }, 'my super awesome tele bot');
           }
           res.send({ data: result, token: myToken });
-        }).catch((err) => {
-          res.send({ error: err });
+        }).catch((resultErr) => {
+          res.send({ error: resultErr });
         });
       } catch (tryErr) {
         console.log('Error caught while trying to login ', tryErr);
@@ -96,7 +91,7 @@ router.post(`/webhook/${teleConfig.token}`, async (req, res) => {
     console.log('received a webhook from telegram!');
     console.log(req.body);
     if (req.body.edited_message) {
-      req.body.message = req.body.edited_message
+      req.body.message = req.body.edited_message;
     }
     const entities = req.body.message.entities;
     const text = req.body.message.text;
@@ -105,10 +100,15 @@ router.post(`/webhook/${teleConfig.token}`, async (req, res) => {
     let statusRes = { code: 200, msg: 'Ok!' };
     console.log('entities are: ', entities);
     console.log('is botCommand? ', botCommand);
+    const inputs = text.split(' ');
+    const command = inputs[0];
+    const args = inputs.splice(1, inputs.length);
     if (botCommand) {
-      statusRes = await polarbear(text, bodyMessage);
+      statusRes = await polarbear(command, bodyMessage, args);
     }
     console.log('text: ', text);
+    console.log('command: ', command);
+    console.log('args: ', args)
     res.status(statusRes.code).send(statusRes.msg);
   } catch (err) {
     console.log(err);
