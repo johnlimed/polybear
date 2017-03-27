@@ -5,11 +5,8 @@ const path = require('path');
 const rethink = require('./server/modules/rethink');
 const http = require('http');
 const https = require('https');
-const teleConfig = require('./server/config/telegramConfig');
-const request = require('request');
-const querystring = require('querystring');
 const certificates = require('./server/config/certificates');
-// const expressJWT = require('express-jwt');
+const httpsrequests = require('./server/modules/httpsrequests');
 
 const app = express();
 const port = {
@@ -17,70 +14,9 @@ const port = {
 	https: process.env.HTTPS_PORT || 4333,
 };
 
-// const privateKey = fs.readFileSync('ssl/key.pem', 'utf8');
-// const certificate = fs.readFileSync('ssl/server.crt', 'utf8');
-// const cACertificate = [fs.readFileSync('ssl/COMODORSAAddTrustCA.crt'), fs.readFileSync('ssl/COMODORSADomainValidationSecureServerCA.crt')];
 const privateKey = certificates.privateKey;
 const certificate = certificates.certificate;
 const cACertificate = certificates.cACertificate;
-
-// const serverSecret = 'my super awesome tele bot';
-
-setupWebhook = () => {
-	console.log('Setting up telegram webhook!');
-	const payload = { url: `https://a7cd47cb.ngrok.io/webhook/${teleConfig.token}` };
-	// const manualOptions = {
-	// 	hostname: 'api.telegram.org',
-	// 	port: 443,
-	// 	path: encodeURI(`/bot${teleConfig.token}/setWebhook`),
-	// 	url: `https://0110587d.ngrok.io/webhook/${teleConfig.token}`,
-	// 	method: 'POST',
-	// 	headers: {
-	// 		'Content-Type': 'application/json',
-	// 		'Content-Length': Buffer.byteLength(payload),
-	// 	}
-	// };
-	const options = {
-		method: 'POST',
-		uri: `https://api.telegram.org/bot${teleConfig.token}/setWebhook`,
-		json: payload,
-		// url: `https://api.telegram.org/bot${teleConfig.token}/setWebhook`,
-		agentOptions: {
-				cert: certificate,
-				key: privateKey,
-				// Or use `pfx` property replacing `cert` and `key` when using private key, certificate and CA certs in PFX or PKCS12 format:
-				// pfx: fs.readFileSync(pfxFilePath),
-				// passphrase: 'password',
-				// securityOptions: 'SSL_OP_NO_SSLv3'
-		}
-	};
-
-	// const httpRequest = https.request(options, (httpRes) => {
-	// 	console.log('statusCode:', httpRes.statusCode);
-	// 	console.log('headers:', httpRes.headers);
-	// 	httpRes.setEncoding('utf8');
-	// 	httpRes.on('data', (d) => {
-	// 		process.stdout.write(d);
-	// 	});
-	// 	httpRes.on('end', () => {
-	// 		console.log('No more data in response.');
-	// 	});
-	// });
-	// httpRequest.on('error', (err) => {
-	// 	console.log(err);
-	// });
-	// httpRequest.write(payload);
-	// httpRequest.end();
-
-	request(options, (err, res, body) => {
-		if (err) {
-			console.log('there was an error with the request ', err);
-		} else {
-			console.log('successfully setup webhook!');
-			// console.log('success! ', body);
-		}
-	});
-};
 
 runServer = async (appServer) => {
 	try {
@@ -97,12 +33,13 @@ runServer = async (appServer) => {
 			console.log(`HTTPS server listening on *: ${port.https}`);
 			console.log(`Server is on: ${process.env.NODE_ENV}`);
 
-			setupWebhook();
+			httpsrequests.setupWebhook();
 		});
 	} catch (err) {
 		console.log('Error caught while trying to run server ', err);
 	}
 };
+
 // cookie parser modules
 app.use(cookieParser());
 
@@ -110,16 +47,12 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-// use jwt tokens
-// app.use(expressJWT({ secret: serverSecret }).unless({ path: ['/register', '/login', '/'] }));
-
 // set static files
 app.use('/', express.static(path.join(__dirname, 'public')));
 
 // const authRoute	= require('./server/routes/auth');
 const route = require('./server/routes/router');
 
-// app.use('/', authRoute);
 app.use('/', route); // last to capture all other routes to the frontend
 
 runServer(app);

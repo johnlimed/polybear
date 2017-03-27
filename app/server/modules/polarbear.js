@@ -1,11 +1,9 @@
 const rethink = require('rethinkdb');
 const dbconfig = require('../config/dbconfig');
-const certificates = require('../config/certificates');
-const teleConfig = require('../config/telegramConfig');
-const Timr = require('timrjs');
-const request = require('request');
+const httpsrequests = require('./httpsrequests');
 
 const activePolarbearGames = [];
+
 PolaybearGame = (chatID, status, players, joinTimer, actionTimer, dayTimer, voteTimer) => {
   this.chatID = chatID;
   this.status = status;
@@ -24,68 +22,60 @@ const roles = ['polar bear', 'villager', 'little girl', 'doctor'];
 
 alreadyRunningGame = roomID => activePolarbearGames.includes(roomID);
 createGame = (bodyMessage) => {
-  const game = new PolarbearGame()
+  const game = new PolarbearGame();
   activePolarbearGames.push(bodyMessage.from.id);
 };
-sendMessage = (bodyMessage, msg) => {
-  const payload = { chat_id: bodyMessage.chat.id, text: msg };
-  const options = {
-    method: 'POST',
-    uri: `https://api.telegram.org/bot${teleConfig.token}/sendMessage`,
-    json: payload,
-    agentOptions: {
-        cert: certificates.certificate,
-        key: certificates.privateKey,
-    },
-  };
-	request(options, (err, res, body) => {
-		if (err) {
-			console.log('there was an error with the request ', err);
-		} else {
-			console.log('successfully sent a message!');
-			// console.log('success! ', body);
-		}
-	});
-}
 
-module.exports = {
-  '/register': bodyMessage => new Promise((resolve, reject) => {
-    const sender = bodyMessage.from;
-    rethink.connect(dbconfig[process.env.NODE_ENV], async (err, conn) => {
-      try {
-        const result = await rethink.table('users').insert({ teleID: sender.id, name: sender.username, chatID: bodyMessage.chat.id }, { returnChanges: true }).run(conn);
-        conn.close();
-        resolve({ code: 200, msg: `OK! ${result}` });
-      } catch (tryErr) {
-        console.log('Error caught in registration of user');
-        reject(tryErr);
-      }
-    });
-  }),
-  '/start': bodyMessage => new Promise((resolve, reject) => {
-    const roomID = bodyMessage.from.id;
-    console.log(`roomID is ${roomID}, the roomArray is ${activePolarbearGames}`)
-    if (alreadyRunningGame(roomID)) {
-      // return already in game message!
-      console.log('Found a game running!')
-      resolve({ code: 200, msg: 'OK! already in game!' });
-    } else {
-      // const timer = ;
-      activePolarbearGames.push(roomID);
-      const timer = Timr('00:05')
-      console.log('after timer')
-      timer.ticker((_ref) => {
-        if (_ref.percentageDone === 50 || _ref.percentageDone === 75 || _ref.percentageDone === 90) {
-          console.log(`${_ref.percentageDone} left to join the game!`);
+module.exports = (command, bodyMessage) => new Promise((resolve, reject) => {
+  const sender = bodyMessage.from;
+  switch (command) {
+    case '/register':
+    case '/register@poly_polarbear_bot': {
+      rethink.connect(dbconfig[process.env.NODE_ENV], async (err, conn) => {
+        try {
+          const result = await rethink.table('users').insert({ teleID: sender.id, name: sender.username, chatID: bodyMessage.chat.id }, { returnChanges: true }).run(conn);
+          conn.close();
+          if (result.errors) {
+            httpsrequests.sendMessage(bodyMessage, `${sender.username} you are already a polar bear. Stop trying to be one.`);
+          } else {
+            httpsrequests.sendMessage(bodyMessage, `${sender.username} turned into a polar bear! Welcome!`);
+          }
+          resolve({ code: 200, msg: `OK! ${result}` });
+        } catch (tryErr) {
+          console.log('Error caught in registration of user');
+          reject({ code: 200, msg: `failed though :( ${tryErr}` });
         }
-        console.log(`${_ref.percentageDone}`)
-      })
-      timer.finish((self) => {
-        sendMessage(bodyMessage, self);
-        console.log(`Times up! gotta starting game? ${self}`);
-        resolve({ code: 200, msg: 'OK! Successfully started game!' });
       });
-      resolve({ code: 200, msg: 'OK! Successfully started game!' });
+      break;
     }
-  }),
-};
+    case '/start':
+    case '/start@poly_polarbear_bot': {
+      const roomID = bodyMessage.chat.id;
+      console.log(`roomID is ${roomID}, the roomArray is ${activePolarbearGames}`);
+      if (alreadyRunningGame(roomID)) {
+        console.log('Found a game running!');
+        httpsrequests.sendMessage(bodyMessage, 'Polar bears are already trying to start a game. Join that one!');
+        resolve({ code: 200, msg: 'OK! already in game!' });
+      } else {
+        activePolarbearGames.push(roomID);
+        const setTime = 0;
+        let timeSpent = 0;
+        setTimeout(() => {
+          console.log('Times up! gotta starting game?');
+          resolve({ code: 200, msg: 'OK! Successfully started game!' });
+        }, setTime * 60000);
+        setInterval(() => {
+          timeSpent += 1;
+          console.log(`${setTime - timeSpent} minutes left to join the game!`);
+        }, 60000);
+        console.log('after timer');
+        resolve({ code: 200, msg: 'OK! Successfully started game!' });
+      }
+      break;
+    }
+    default: {
+      httpsrequests.sendMessage(bodyMessage, `${sender.username} I cannot understand you... please speak polar bear`);
+      resolve({ code: 200, msg: 'OK! already in game!' });
+    }
+  }
+});

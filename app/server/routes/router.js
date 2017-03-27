@@ -2,9 +2,9 @@ const express = require('express');
 const rethink = require('rethinkdb');
 const dbconfig = require('../config/dbconfig');
 const teleConfig = require('../config/telegramConfig');
-const https = require('https');
 const polarbear = require('../modules/polarbear');
-// const http = require('http');
+const httpsrequests = require('../modules/httpsrequests');
+
 // const jwt = require('jsonwebtoken');
 
 // const path = require('path');
@@ -95,20 +95,25 @@ router.post(`/webhook/${teleConfig.token}`, async (req, res) => {
   try {
     console.log('received a webhook from telegram!');
     console.log(req.body);
+    if (req.body.edited_message) {
+      req.body.message = req.body.edited_message
+    }
     const entities = req.body.message.entities;
     const text = req.body.message.text;
-    const botCommand = req.body.message.entities[0].type === 'bot_command';
+    const botCommand = req.body.message.entities ? req.body.message.entities[0].type === 'bot_command' : false;
     const bodyMessage = req.body.message;
-    let statusRes = { code: 500, msg: '' };
+    let statusRes = { code: 200, msg: 'Ok!' };
     console.log('entities are: ', entities);
     console.log('is botCommand? ', botCommand);
     if (botCommand) {
-      statusRes = await polarbear[text](bodyMessage);
+      statusRes = await polarbear(text, bodyMessage);
     }
     console.log('text: ', text);
     res.status(statusRes.code).send(statusRes.msg);
   } catch (err) {
-    res.status(500).send('Broken... not OK!');
+    console.log(err);
+    httpsrequests.sendMessage(bodyMessage, 'Sorry, something broke... please contact my handler');
+    res.status(200).send(`Broken... not OK! ${err}`);
   }
 });
 
