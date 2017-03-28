@@ -1,5 +1,4 @@
-const rethink = require('rethinkdb');
-const dbconfig = require('../config/dbconfig');
+const rethink = require('../modules/rethink');
 const httpsrequests = require('./httpsrequests');
 
 const activePolarbearGames = [];
@@ -26,30 +25,26 @@ createGame = (bodyMessage) => {
   activePolarbearGames.push(bodyMessage.from.id);
 };
 
-module.exports = (command, bodyMessage) => new Promise((resolve, reject) => {
+module.exports = (command, bodyMessage, args) => new Promise(async (resolve, reject) => {
   const sender = bodyMessage.from;
   switch (command) {
     case '/register':
     case '/register@poly_polarbear_bot': {
-      rethink.connect(dbconfig[process.env.NODE_ENV], async (err, conn) => {
-        try {
-          const result = await rethink.table('users').insert({ teleID: sender.id, name: sender.username, chatID: bodyMessage.chat.id }, { returnChanges: true }).run(conn);
-          conn.close();
-          if (result.errors) {
-            httpsrequests.sendMessage(bodyMessage, `${sender.username} you are already a polar bear. Stop trying to be one.`);
-          } else {
-            httpsrequests.sendMessage(bodyMessage, `${sender.username} turned into a polar bear! Welcome!`);
-          }
-          resolve({ code: 200, msg: `OK! ${result}` });
-        } catch (tryErr) {
-          console.log('Error caught in registration of user');
-          reject({ code: 200, msg: `failed though :( ${tryErr}` });
-        }
-      });
+      try {
+        const username = sender.username ? sender.username : `${sender.first_name} ${sender.last_name}`;
+        const result = await rethink.registerUser(sender.id, username, bodyMessage.chat.id);
+        if (result.alreadyRegistered) { httpsrequests.sendMessage(bodyMessage, `${sender.username} you are already a polar bear. Stop trying to be one.`); } else if (result.error) {
+          httpsrequests.sendMessage(bodyMessage, `I broke trying to register you... ${result.error}`);
+          reject(result.error);
+        } else { httpsrequests.sendMessage(bodyMessage, `${sender.username} turned into a polar bear! Welcome!`); }
+        resolve({ code: 200, msg: `OK! ${result}` });
+      } catch (err) { reject(err); }
       break;
     }
     case '/join':
     case '/join@poly_polarbear_bot': {
+      httpsrequests.sendMessage(bodyMessage, `${sender.first_name} I am not ready yet :(`);
+      resolve({ code: 200, msg: 'OK!' });
       break;
     }
     case '/start':

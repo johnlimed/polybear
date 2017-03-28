@@ -24,7 +24,7 @@
     "express": "^4.13.4",
     "path": "^0.12.7",
     "request": "^2.81.0",
-    "rethinkdb": "^2.3.3",
+    "rethinkdb": "^2.3.3"
   },
   "devDependencies": {
     "autoprefixer": "^6.4.0",

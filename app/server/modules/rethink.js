@@ -44,4 +44,46 @@ runRethink = () => new Promise((resolve, reject) => {
   });
 });
 
+insertIntoWebhook = webhookObj => new Promise((resolve, reject) => {
+	rethink.connect(dbconfig[process.env.NODE_ENV], async (err, conn) => {
+		try {
+			const result = await rethink.table('webhook').insert(webhookObj, { returnChanges: true }).run(conn);
+			conn.close();
+			if (result.errors) {
+				console.log(`error while trying to insert webhook history into db: ${result.errors}`);
+				reject(result.errors);
+			}
+			console.log('successfully logged webhook')
+			resolve();
+		} catch (tryErr) {
+			console.log(`exception caught while trying to insert webhook history to db: ${tryErr}`);
+			reject(tryErr);
+		}
+	});
+});
+
+registerUser = (teleID, name, chatID) => new Promise((resolve, reject) => {
+	const sendingBack = {}
+	rethink.connect(dbconfig[process.env.NODE_ENV], async (err, conn) => {
+		try {
+			const result = await rethink.table('users').insert({ teleID, name, chatID }, { returnChanges: true }).run(conn);
+			conn.close();
+			if (result.errors) {
+				console.log('i should be here')
+				sendingBack.alreadyRegistered = result.errors;
+				resolve(sendingBack);
+			} else {
+				sendingBack.res = { code: 200, msg: `OK! ${result}` };
+				resolve(sendingBack);
+			}
+		} catch (tryErr) {
+			console.log('Error caught in registration of user');
+			sendingBack.error = tryErr;
+			reject(sendingBack);
+		}
+	});
+});
+
 module.exports.runRethink = runRethink;
+module.exports.insertIntoWebhook = insertIntoWebhook;
+module.exports.registerUser = registerUser;
