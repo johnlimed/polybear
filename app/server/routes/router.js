@@ -84,7 +84,7 @@ router.post(`/webhook/${teleConfig.token}`, async (req, res) => {
       }
       console.log('text: ', text);
       console.log('command: ', command);
-      console.log('args: ', args)
+      console.log('args: ', args);
     }
     res.status(statusRes.code).send(statusRes.msg);
   } catch (err) {

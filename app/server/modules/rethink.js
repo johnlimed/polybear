@@ -53,7 +53,7 @@ insertIntoWebhook = webhookObj => new Promise((resolve, reject) => {
 				console.log(`error while trying to insert webhook history into db: ${result.errors}`);
 				reject(result.errors);
 			}
-			console.log('successfully logged webhook')
+			console.log('successfully logged webhook');
 			resolve();
 		} catch (tryErr) {
 			console.log(`exception caught while trying to insert webhook history to db: ${tryErr}`);
@@ -63,17 +63,17 @@ insertIntoWebhook = webhookObj => new Promise((resolve, reject) => {
 });
 
 registerUser = (teleID, name, chatID) => new Promise((resolve, reject) => {
-	const sendingBack = {}
+	const sendingBack = {};
 	rethink.connect(dbconfig[process.env.NODE_ENV], async (err, conn) => {
 		try {
 			const result = await rethink.table('users').insert({ teleID, name, chatID }, { returnChanges: true }).run(conn);
 			conn.close();
 			if (result.errors) {
-				console.log('i should be here')
+				console.log('i should be here');
 				sendingBack.alreadyRegistered = result.errors;
 				resolve(sendingBack);
 			} else {
-				sendingBack.res = { code: 200, msg: `OK! ${result}` };
+				sendingBack.res = { code: 200, msg: 'OK!' };
 				resolve(sendingBack);
 			}
 		} catch (tryErr) {
