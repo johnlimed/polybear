@@ -1,14 +1,8 @@
 const express = require('express');
-const rethink = require('rethinkdb');
-const dbconfig = require('../config/dbconfig');
 const teleConfig = require('../config/telegramConfig');
 const polarbear = require('../modules/polarbear');
-// const https = require('https');
-// const http = require('http');
-// const jwt = require('jsonwebtoken');
-
-// const path = require('path');
-// const utils  	= require('../modules/utils'),
+const httpsrequests = require('../modules/httpsrequests');
+const rethink = require('../modules/rethink');
 
 const router 	= express.Router();
 
@@ -38,31 +32,6 @@ router.get('/', (req, res) => {
 //     }
 //   });
 // });
-
-router.post('/login', (req, res) => {
-    rethink.connect(dbconfig[process.env.NODE_ENV], async (err, conn) => {
-      try {
-        const result = [];
-        const resultCursor = await rethink.table('users').filter({ name: req.body.name }).run(conn);
-        let myToken = '';
-        resultCursor.eachAsync((row) => {
-          console.log(row);
-          result.push(row);
-        }).then(() => {
-          console.log(result);
-          if (result.length > 0) {
-            myToken = jwt.sign({ name: req.body.name }, 'my super awesome tele bot');
-          }
-          res.send({ data: result, token: myToken });
-        }).catch((err) => {
-          res.send({ error: err });
-        });
-      } catch (tryErr) {
-        console.log('Error caught while trying to login ', tryErr);
-        res.send({ error: tryErr });
-      }
-    });
-});
 
 // router.get('/getMe', (req, res) => {
 //   console.log('hello I am here');
@@ -95,21 +64,33 @@ router.post(`/webhook/${teleConfig.token}`, async (req, res) => {
   try {
     console.log('received a webhook from telegram!');
     console.log(req.body);
+    await rethink.insertIntoWebhook(req.body);
+    if (req.body.edited_message) {
+      req.body.message = req.body.edited_message;
+    }
     const entities = req.body.message.entities;
     const text = req.body.message.text;
-    const botCommand = req.body.message.entities[0].type === 'bot_command';
+    const botCommand = req.body.message.entities ? req.body.message.entities[0].type === 'bot_command' : false;
     const bodyMessage = req.body.message;
-    let statusRes = { code: 200, msg: 'OK!' };
-    console.log('entities are: ', entities || undefined);
+    let statusRes = { code: 200, msg: 'Ok!' };
+    console.log('entities are: ', entities);
     console.log('is botCommand? ', botCommand);
-    if (botCommand) {
-      statusRes = await polarbear[text](bodyMessage);
+    if (text) {
+      const inputs = text.split(' ');
+      const command = inputs[0];
+      const args = inputs.splice(1, inputs.length);
+      if (botCommand) {
+        statusRes = await polarbear(command, bodyMessage, args);
+      }
+      console.log('text: ', text);
+      console.log('command: ', command);
+      console.log('args: ', args);
     }
-    // console.log('text: ', text);
-    // res.status(statusRes.code).send(statusRes.msg);
-    res.status(200).send('OK!');
+    res.status(statusRes.code).send(statusRes.msg);
   } catch (err) {
-    res.status(500).send('Broken... not OK!');
+    console.log(err);
+    httpsrequests.sendMessage(req.body.message, `Sorry, something broke... please contact my handler ${err}`);
+    res.status(200).send(`Broken... not OK! ${err}`);
   }
 });
 
