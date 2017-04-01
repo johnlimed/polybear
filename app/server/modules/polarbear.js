@@ -81,10 +81,10 @@ module.exports = {
         console.log(`${_ref.percentageDone}`)
       })
       timer.finish((self) => {
-        sendMessage(bodyMessage, self);
         console.log(`Times up! gotta starting game? ${self}`);
         resolve({ code: 200, msg: 'OK! Successfully started game!' });
       });
+      sendMessage(bodyMessage, self);
       resolve({ code: 200, msg: 'OK! Successfully started game!' });
     }
   }),

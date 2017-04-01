@@ -7,8 +7,8 @@ const http = require('http');
 const https = require('https');
 const teleConfig = require('./server/config/telegramConfig');
 const request = require('request');
-const querystring = require('querystring');
 const certificates = require('./server/config/certificates');
+// const querystring = require('querystring');
 // const expressJWT = require('express-jwt');
 
 const app = express();
@@ -17,9 +17,6 @@ const port = {
 	https: process.env.HTTPS_PORT || 4333,
 };
 
-// const privateKey = fs.readFileSync('ssl/key.pem', 'utf8');
-// const certificate = fs.readFileSync('ssl/server.crt', 'utf8');
-// const cACertificate = [fs.readFileSync('ssl/COMODORSAAddTrustCA.crt'), fs.readFileSync('ssl/COMODORSADomainValidationSecureServerCA.crt')];
 const privateKey = certificates.privateKey;
 const certificate = certificates.certificate;
 const cACertificate = certificates.cACertificate;
@@ -28,7 +25,7 @@ const cACertificate = certificates.cACertificate;
 
 setupWebhook = () => {
 	console.log('Setting up telegram webhook!');
-	const payload = { url: `https://a7cd47cb.ngrok.io/webhook/${teleConfig.token}` };
+	const payload = { url: `https://91757956.ngrok.io/webhook/${teleConfig.token}` };
 	// const manualOptions = {
 	// 	hostname: 'api.telegram.org',
 	// 	port: 443,

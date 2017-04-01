@@ -2,8 +2,8 @@ const express = require('express');
 const rethink = require('rethinkdb');
 const dbconfig = require('../config/dbconfig');
 const teleConfig = require('../config/telegramConfig');
-const https = require('https');
 const polarbear = require('../modules/polarbear');
+// const https = require('https');
 // const http = require('http');
 // const jwt = require('jsonwebtoken');
 
@@ -99,14 +99,15 @@ router.post(`/webhook/${teleConfig.token}`, async (req, res) => {
     const text = req.body.message.text;
     const botCommand = req.body.message.entities[0].type === 'bot_command';
     const bodyMessage = req.body.message;
-    let statusRes = { code: 500, msg: '' };
-    console.log('entities are: ', entities);
+    let statusRes = { code: 200, msg: 'OK!' };
+    console.log('entities are: ', entities || undefined);
     console.log('is botCommand? ', botCommand);
     if (botCommand) {
       statusRes = await polarbear[text](bodyMessage);
     }
-    console.log('text: ', text);
-    res.status(statusRes.code).send(statusRes.msg);
+    // console.log('text: ', text);
+    // res.status(statusRes.code).send(statusRes.msg);
+    res.status(200).send('OK!');
   } catch (err) {
     res.status(500).send('Broken... not OK!');
   }
