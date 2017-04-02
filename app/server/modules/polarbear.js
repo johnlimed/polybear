@@ -128,6 +128,9 @@ function PolarbearSession(chatID) {
     //   setLovers();
     // }
   };
+  this.getPlayerList = () => {
+    httpsrequests.sendMessage({ chat: { id: this.id } }, 'The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all. ');
+  }
   this.startGame = () => {
     this.status = 'polarbear';
     httpsrequests.sendMessage({ chat: { id: this.id } }, 'The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all. ');
