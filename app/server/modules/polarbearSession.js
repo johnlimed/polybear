@@ -19,7 +19,7 @@ module.exports = function PolarbearSession(chatID) {
     this.setIsLover = (isLover) => { this.status = isLover; };
     this.setLover = (lover) => { this.lover = lover; };
   }
-  const minPlayers = 1;
+  const minPlayers = 5;
   this.maxPlayers = 20;
   this.numPolarbears = 1;
   this.numVillagers = 4;
@@ -32,24 +32,29 @@ module.exports = function PolarbearSession(chatID) {
   this.lovers = [];
   this.id = chatID;
   this.status = 'initialized'; // initialized, join, stopped, polarbear, littleGirl, doctor, voting, finished
+  this.isTest = false;
   this.timerOptions = {
     join: {
       tick: 1,
       ontick: (ms) => {
         if (Math.round(ms / 1000) === 30) {
           // if 30 sec remaining
-          httpsrequests.sendMessage({ chat: { id: this.id } }, `${Math.round(ms / 1000)} sec left to joined the game!`);
+          sendTelegramMessage(`${Math.round(ms / 1000)} sec left to joined the game!`);
+          // httpsrequests.sendMessage({ chat: { id: this.id } }, `${Math.round(ms / 1000)} sec left to joined the game!`);
         } else if ((Math.round(ms / 1000) < 10) && (Math.round(ms / 1000) % 1 === 0)) {
           // for every second less than 10 sec:
-          httpsrequests.sendMessage({ chat: { id: this.id } }, `${Math.round(ms / 1000)} sec left to joined the game!`);
+          sendTelegramMessage(`${Math.round(ms / 1000)} sec left to joined the game!`);
+          // httpsrequests.sendMessage({ chat: { id: this.id } }, `${Math.round(ms / 1000)} sec left to joined the game!`);
         } else if (Math.round(ms / 1000) % 60 === 0) {
           // for every other minute:
-          httpsrequests.sendMessage({ chat: { id: this.id } }, `${Math.round(ms / 1000 / 60)} min left to joined the game!`);
+          sendTelegramMessage(`${Math.round(ms / 1000 / 60)} min left to joined the game!`);
+          // httpsrequests.sendMessage({ chat: { id: this.id } }, `${Math.round(ms / 1000 / 60)} min left to joined the game!`);
         }
       },
       onend: () => {
         if (enoughPlayers()) this.startGame();
-        httpsrequests.sendMessage({ chat: { id: this.id } }, 'You need more Polarbears. Game did not start. Try again later.');
+        sendTelegramMessage('You need more Polarbears. Game did not start. Try again later.');
+        // httpsrequests.sendMessage({ chat: { id: this.id } }, 'You need more Polarbears. Game did not start. Try again later.');
       }
     },
   };
@@ -66,6 +71,11 @@ module.exports = function PolarbearSession(chatID) {
       timer: new Timer(),
       duration: 10,
     },
+  };
+  sendTelegramMessage = (msg) => {
+    if (!this.isTest) {
+      httpsrequests.sendMessage({ chat: { id: this.id } }, msg);
+    }
   };
   // this.addPlayer = (name) => {
   //   player = new Player(name);
@@ -104,8 +114,8 @@ module.exports = function PolarbearSession(chatID) {
   };
   assignRoles = () => {
     const numPlayers = this.playerNameList.length;
-    this.numPolarbears = 1;
-    // this.numPolarbears = Math.floor((numPlayers - 2) / 2);
+    // this.numPolarbears = 1;
+    this.numPolarbears = Math.floor((numPlayers - 2) / 2);
     this.numVillagers = numPlayers - this.numPolarbears;
     this.uninitializedPlayers = this.playerNameList;
     // set Polarbears
@@ -113,32 +123,36 @@ module.exports = function PolarbearSession(chatID) {
       setPlayer('Polar bear', 'Polar bear');
     }
     // set special villagers
-    // for (let k = 0; k < specialVillagers.length; k += 1) {
-    //   setPlayer(specialVillagers[k], 'Villagers');
-    // }
+    for (let k = 0; k < specialVillagers.length; k += 1) {
+      setPlayer(specialVillagers[k], 'Villagers');
+    }
     // set Villagers
-    // for (let j = 0; j < this.numVillagers - 2; i += 1) {
-    //   setPlayer('Villager', 'Villager');
-    // }
+    for (let j = 0; j < this.numVillagers - 2; j += 1) {
+      setPlayer('Villager', 'Villager');
+    }
     // if (this.playLovers) {
     //   setLovers();
     // }
   };
   this.getPlayerList = () => {
-    httpsrequests.sendMessage({ chat: { id: this.id } }, 'The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all. ');
-  }
+    sendTelegramMessage('The night has come, ');
+    // httpsrequests.sendMessage({ chat: { id: this.id } }, 'The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all. ');
+  };
   this.startGame = () => {
     this.status = 'polarbear';
-    httpsrequests.sendMessage({ chat: { id: this.id } }, 'The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all. ');
+    sendTelegramMessage('The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all.');
+    // httpsrequests.sendMessage({ chat: { id: this.id } }, 'The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all. ');
     assignRoles();
   };
   this.forceStart = () => {
     if (enoughPlayers()) {
-      httpsrequests.sendMessage({ chat: { id: this.id } }, 'Force starting the game. Hang on to your fur');
+      sendTelegramMessage('Force starting the game. Hang on to your fur.');
+      // httpsrequests.sendMessage({ chat: { id: this.id } }, 'Force starting the game. Hang on to your fur.');
       this.timers.join.timer.stop();
       this.startGame();
     } else {
-      httpsrequests.sendMessage({ chat: { id: this.id } }, 'You dont have enough Polarbears. Cannot start game. Wait for more Polarbears to /join.');
+      sendTelegramMessage('You dont have enough Polarbears. Cannot start game. Wait for more Polarbears to /join.');
+      // httpsrequests.sendMessage({ chat: { id: this.id } }, 'You dont have enough Polarbears. Cannot start game. Wait for more Polarbears to /join.');
     }
   };
   this.startTimer = (timerName) => { this.timers[timerName].timer.start(this.timers[timerName].duration); };
@@ -149,4 +163,4 @@ module.exports = function PolarbearSession(chatID) {
     this.startTimer(timerName);
   };
   this.getStatus = () => this.status;
-}
+};
