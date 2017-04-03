@@ -5,8 +5,6 @@ const path = require('path');
 const rethink = require('./server/modules/rethink');
 const http = require('http');
 const https = require('https');
-const teleConfig = require('./server/config/telegramConfig');
-const request = require('request');
 const certificates = require('./server/config/certificates');
 const httpsrequests = require('./server/modules/httpsrequests');
 
