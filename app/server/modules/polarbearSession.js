@@ -2,8 +2,8 @@ const Timer = require('timer.js');
 const httpsrequests = require('./httpsrequests');
 
 module.exports = function PolarbearSession(chatID) {
-  const factions = ['village', 'polar bear', 'lovers'];
-  const roles = ['polar bear', 'villager'];
+  // const factions = ['village', 'polar bear', 'lovers'];
+  // const roles = ['polar bear', 'villager'];
   const specialVillagers = ['little girl', 'doctor'];
 
   function Player(name) {
@@ -29,6 +29,9 @@ module.exports = function PolarbearSession(chatID) {
   this.mixLovers = false;
   this.loversAlive = true;
   this.lovers = [];
+  this.alivePolarbears = [];
+  this.aliveVillagers = [];
+  this.aliveLovers = [];
   this.id = chatID;
   this.status = 'initialized'; // initialized, join, stopped, polarbear, littleGirl, doctor, voting, finished
   this.isTest = false;
@@ -50,7 +53,7 @@ module.exports = function PolarbearSession(chatID) {
       onend: () => {
         if (enoughPlayers()) this.startGame();
         sendTelegramMessage('You need more Polarbears. Game did not start. Try again later.');
-      }
+      },
     },
   };
   this.timers = {
@@ -67,9 +70,9 @@ module.exports = function PolarbearSession(chatID) {
       duration: 10,
     },
   };
-  sendTelegramMessage = (msg) => {
+  sendTelegramMessage = (msg, parseMode) => {
     if (!this.isTest) {
-      httpsrequests.sendMessage({ chat: { id: this.id } }, msg);
+      httpsrequests.sendMessage({ chat: { id: this.id } }, msg, parseMode);
     }
   };
   // this.addPlayer = (name) => {
@@ -92,6 +95,7 @@ module.exports = function PolarbearSession(chatID) {
     const playerName = uninitializedPlayers[playerArrayID];
     this.players[playerName].setRole(role);
     this.players[playerName].setFaction(faction);
+    this[`alive${faction}`].push(playerName);
     uninitializedPlayers.splice(playerArrayID, 1);
   };
   setLovers = () => {
@@ -105,9 +109,16 @@ module.exports = function PolarbearSession(chatID) {
     }
     if (this.players[this.lovers[0]].faction !== this.players[this.lovers[1]].faction) {
       this.mixLovers = true;
+      for (let i = 0; i < this.lovers.length; i += 1) {
+        const playerIndex = this[`alive${this.players[this.lovers[i]].faction}`].indexOf(this.lovers[i]);
+        this[`alive${this.players[this.lovers[i]].faction}`].splice(playerIndex, 1);
+      }
+      this.players[this.lovers[0]].faction = 'Lovers';
+      this.players[this.lovers[1]].faction = 'Lovers';
+      this.aliveLovers = this.lovers.slice(0);
     }
-    this.players[this.lovers[0]].lover = this.players[this.lovers[1]];
-    this.players[this.lovers[1]].lover = this.players[this.lovers[0]];
+    this.players[this.lovers[0]].lover = this.players[this.lovers[1]].name;
+    this.players[this.lovers[1]].lover = this.players[this.lovers[0]].name;
   };
   this.assignRoles = () => {
     const numPlayers = this.playerNameList.length;
@@ -117,7 +128,7 @@ module.exports = function PolarbearSession(chatID) {
     const uninitializedPlayers = this.playerNameList.slice(0);
     // set Polarbears
     for (let i = 0; i < this.numPolarbears; i += 1) {
-      setPlayer('Polar bear', 'Polar bear', uninitializedPlayers);
+      setPlayer('Polar bear', 'Polarbears', uninitializedPlayers);
     }
     // set special villagers
     for (let k = 0; k < specialVillagers.length; k += 1) {
@@ -125,20 +136,64 @@ module.exports = function PolarbearSession(chatID) {
     }
     // set Villagers
     for (let j = 0; j < this.numVillagers - 2; j += 1) {
-      setPlayer('Villager', 'Villager', uninitializedPlayers);
+      setPlayer('Villager', 'Villagers', uninitializedPlayers);
     }
     if (this.playLovers) {
       setLovers();
     }
   };
   this.getPlayerList = () => {
-    sendTelegramMessage('The night has come, ');
-    // httpsrequests.sendMessage({ chat: { id: this.id } }, 'The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all. ');
+    let msg = 'Players that are in game:\n';
+    for (let i = 0; i < this.playerNameList.length; i += 1) {
+      const playerName = this.players[this.playerNameList[i]].name;
+      const playerStatus = this.players[this.playerNameList[i]].status;
+      const playerFaction = this.players[this.playerNameList[i]].faction;
+      const playerRole = this.players[this.playerNameList[i]].role;
+      msg += `${playerName} ${playerFaction}  ${playerRole} ${playerStatus}\n`;
+    }
+    sendTelegramMessage(msg);
   };
+  polarbearPhase = () => {
+    // send polarbears a personal msg
+    // wait for response
+    // if
+  };
+  removePlayerFromAliveList = (playerName) => {
+    const faction = this.players[playerName].faction;
+    this.players[playerName].status = 'dead';
+    const playerIndex = this[`alive${faction}`].indexOf(playerName);
+    this[`alive${faction}`].splice(playerIndex, 1);
+  };
+  this.eliminatePlayer = (playerName) => {
+    if (this.players[playerName].isLover) {
+      // kill partner
+      const partnerName = this.players[playerName].lover;
+      removePlayerFromAliveList(partnerName);
+      // const partnerFaction = this.players[partnerName].faction;
+      // this.players[partnerName].status = 'dead';
+      // const playerIndex = this[`alive${partnerFaction}`].indexOf(partnerName);
+      // this[`alive${partnerFaction}`].splice(playerIndex, 1);
+    }
+    removePlayerFromAliveList(playerName);
+    // const faction = this.players[playerName].faction;
+    // this.players[playerName].status = 'dead';
+    // const playerIndex = this[`alive${faction}`].indexOf(playerName);
+    // this[`alive${faction}`].splice(playerIndex, 1);
+  };
+  // winCondition = () => {
+  //   if (this.mixLovers && this.loversAlive) {
+  //     // check for lovers winning condition
+  //   } else {
+  //     // check normal polarbear vs villagers
+  //   }
+  // }
   this.startGame = () => {
     this.status = 'polarbear';
     sendTelegramMessage('The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all.');
     this.assignRoles();
+    // while (true) {
+    //   polarbearPhase();
+    // }
   };
   this.forceStart = () => {
     if (enoughPlayers()) {

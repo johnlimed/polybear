@@ -34,6 +34,16 @@ module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) =
       } catch (err) { reject(err); }
       break;
     }
+    case '/playerlist':
+    case '/playerlist@poly_polarbear_bot': {
+      try {
+        if (alreadyRunningGame(roomID)) {
+          activePolarbearSessions[roomID].getPlayerList();
+        } else { httpsrequests.sendMessage(bodyMessage, 'There isn\'t a game running, start a polar bear game with /start.'); }
+        resolve({ code: 200, msg: 'OK!' });
+      } catch (err) { reject(err); }
+      break;
+    }
     case '/extend':
     case '/extend@poly_polarbear_bot': {
       try {

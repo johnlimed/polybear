@@ -33,12 +33,22 @@ test('Assigning of roles', (assert) => {
   assert.notEqual(gameSession.players.player4.role, '', `player4 has a role of: ${gameSession.players.player4.role}`);
   assert.notEqual(gameSession.players.player5.role, '', `player5 has a role of: ${gameSession.players.player5.role}`);
   assert.equal(gameSession.lovers.length, 2, `lovers have been assigned: ${JSON.stringify(gameSession.lovers[0])} ${JSON.stringify(gameSession.lovers[1])}`);
-  if (gameSession.players[gameSession.lovers[0]].faction !== gameSession.players[gameSession.lovers[1]].faction) {
-    assert.equal(gameSession.mixLovers, true, 'there are lovers from different factions');
+  assert.equal(gameSession.players[gameSession.lovers[0]].lover, gameSession.players[gameSession.lovers[1]].name, 'lover 1 is linked to lover 2');
+  assert.equal(gameSession.players[gameSession.lovers[1]].lover, gameSession.players[gameSession.lovers[0]].name, 'lover 2 is linked to lover 1');
+  if (gameSession.players[gameSession.lovers[0]].faction === 'Lovers' && gameSession.players[gameSession.lovers[1]].faction === 'Lovers') {
+    assert.equal(gameSession.mixLovers, true, 'lovers are from different factions');
+    assert.equal(gameSession.aliveVillagers.length, gameSession.numVillagers - 1, `number of villagers should be -1 of total villagers: ${gameSession.numVillagers}`);
+    assert.equal(gameSession.alivePolarbears.length, gameSession.numPolarbears - 1, `number of polarbears should be -1 of total polarbears: ${gameSession.numPolarbears}`);
   } else {
-    assert.equal(gameSession.mixLovers, false, 'there are no lovers from different factions');
+    assert.equal(gameSession.mixLovers, false, `lovers are from same factions: ${gameSession.players[gameSession.lovers[1]].faction}`);
+    assert.equal(gameSession[`alive${gameSession.players[gameSession.lovers[1]].faction}`].length, gameSession[`num${gameSession.players[gameSession.lovers[1]].faction}`], `number of ${gameSession.players[gameSession.lovers[1]].faction} should be same as total: ${gameSession[`num${gameSession.players[gameSession.lovers[1]].faction}`]}`);
   }
-  assert.equal(gameSession.players[gameSession.lovers[0]].lover, gameSession.players[gameSession.lovers[1]], 'lover 1 is linked to lover 2');
-  assert.equal(gameSession.players[gameSession.lovers[1]].lover, gameSession.players[gameSession.lovers[0]], 'lover 2 is linked to lover 1');
   assert.end();
 });
+
+// TODO: test elimination function
+// TODO: test win condition function
+// TODO: test polarbear phase function
+// TODO: test little girl phase function
+// TODO: test doctor phase function
+// TODO: test villagers phase function
