@@ -47,6 +47,33 @@ test('Assigning of roles', (assert) => {
 });
 
 // TODO: test elimination function
+test('Eliminating player 1', (assert) => {
+  gameSession.eliminatePlayer('player1');
+  if (gameSession.mixLovers) {
+    assert.equal(gameSession.numVillagers, gameSession.aliveVillagers.length + 1, `mix lovers.. number of alive villagers should be +1 of total aliveVillagers: ${gameSession.numVillagers}`);
+    assert.equal(gameSession.numPolarbears, gameSession.alivePolarbears.length + 1, `mix lovers.. number of alive polarbears should be +1 of total alivePolarbears: ${gameSession.numPolarbears}`);
+    assert.equal(gameSession.players[gameSession.players.player1.lover].status, 'dead', 'player1\'s lover status should be dead too');
+    assert.equal(0, gameSession.aliveLovers.length, 'number of alive lovers should be 0');
+  } else if (gameSession.players.player1.faction === 'Villagers' && gameSession.players.player1.isLover) {
+    assert.equal(gameSession.players.player1.status, 'dead', 'player1 is lover and villager... player1\'s status should be dead too');
+    assert.equal(gameSession.numVillagers - 2, gameSession.aliveVillagers.length, `number of alive villagers should be -2 of total: ${gameSession.numVillagers}`);
+    assert.equal(gameSession.players[gameSession.players.player1.lover].status, 'dead', 'player1\'s lover status should be dead');
+    assert.equal(0, gameSession.aliveLovers.length, 'number of alive lovers should be 0');
+  } else if (gameSession.players.player1.faction === 'Villagers') {
+    assert.equal(gameSession.players.player1.status, 'dead', 'not a lover... player1\'s status should be dead');
+    assert.equal(gameSession.numVillagers - 1, gameSession.aliveVillagers.length, `number of alive villagers should be -1 of total: ${gameSession.numVillagers}`);
+  } else if (gameSession.players.player1.faction === 'Polarbears' && gameSession.players.player1.isLover) {
+    assert.equal(gameSession.players.player1.status, 'dead', 'player1 is a lover and polarbear.. player1\'s status should be dead');
+    assert.equal(gameSession.numPolarbears - 2, gameSession.alivePolarbears.length, `number of alive polarbears should be -2 of total: ${gameSession.numPolarbears}`);
+    assert.equal(gameSession.players[gameSession.players.player1.lover].status, 'dead', 'player1\'s lover status should be dead');
+    assert.equal(0, gameSession.aliveLovers.length, 'number of alive lovers should be 0');
+  } else if (gameSession.players.player1.faction === 'Polarbears') {
+    assert.equal(gameSession.players.player1.status, 'dead', 'player1\'s status should be dead');
+    assert.equal(gameSession.numPolarbears - 1, gameSession.alivePolarbears.length, `player1 is not a lover.. number of alive polarbears should be -1 of total: ${gameSession.numPolarbears}`);
+  }
+  assert.end();
+});
+
 // TODO: test win condition function
 // TODO: test polarbear phase function
 // TODO: test little girl phase function

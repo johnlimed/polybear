@@ -2,7 +2,7 @@ const Timer = require('timer.js');
 const httpsrequests = require('./httpsrequests');
 
 module.exports = function PolarbearSession(chatID) {
-  // const factions = ['village', 'polar bear', 'lovers'];
+  // const factions = ['Villagers', 'Polarbears', 'Lovers'];
   // const roles = ['polar bear', 'villager'];
   const specialVillagers = ['little girl', 'doctor'];
 
@@ -14,7 +14,7 @@ module.exports = function PolarbearSession(chatID) {
     this.lover = null;
     this.isLover = false;
     this.setRole = (role) => { this.role = role; };
-    this.setFaction = (faction) => { this.faction = faction; };
+    this.setFaction = (faction) => { this.faction = faction; }; // Polarbears, Villagers, Lovers
     this.setStatus = (status) => { this.status = status; };
     this.setIsLover = (isLover) => { this.isLover = isLover; };
     this.setLover = (lover) => { this.lover = lover; };
@@ -75,11 +75,6 @@ module.exports = function PolarbearSession(chatID) {
       httpsrequests.sendMessage({ chat: { id: this.id } }, msg, parseMode);
     }
   };
-  // this.addPlayer = (name) => {
-  //   player = new Player(name);
-  //   this.playerNameList.push(name);
-  //   this.players[name] = player;
-  // };
   this.hasPlayerJoined = name => this.playerNameList.includes(name);
   this.joinGame = (name) => {
     this.players[name] = new Player(name);
@@ -169,16 +164,8 @@ module.exports = function PolarbearSession(chatID) {
       // kill partner
       const partnerName = this.players[playerName].lover;
       removePlayerFromAliveList(partnerName);
-      // const partnerFaction = this.players[partnerName].faction;
-      // this.players[partnerName].status = 'dead';
-      // const playerIndex = this[`alive${partnerFaction}`].indexOf(partnerName);
-      // this[`alive${partnerFaction}`].splice(playerIndex, 1);
     }
     removePlayerFromAliveList(playerName);
-    // const faction = this.players[playerName].faction;
-    // this.players[playerName].status = 'dead';
-    // const playerIndex = this[`alive${faction}`].indexOf(playerName);
-    // this[`alive${faction}`].splice(playerIndex, 1);
   };
   // winCondition = () => {
   //   if (this.mixLovers && this.loversAlive) {
