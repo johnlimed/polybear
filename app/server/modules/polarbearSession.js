@@ -110,8 +110,8 @@ module.exports = function PolarbearSession(chatID) {
       }
       this.players[this.lovers[0]].faction = 'Lovers';
       this.players[this.lovers[1]].faction = 'Lovers';
-      this.aliveLovers = this.lovers.slice(0);
     }
+    this.aliveLovers = this.lovers.slice(0);
     this.players[this.lovers[0]].lover = this.players[this.lovers[1]].name;
     this.players[this.lovers[1]].lover = this.players[this.lovers[0]].name;
   };
@@ -161,6 +161,9 @@ module.exports = function PolarbearSession(chatID) {
   };
   this.eliminatePlayer = (playerName) => {
     if (this.players[playerName].isLover) {
+      if (!this.mixLovers) {
+        this.aliveLovers = [];
+      }
       // kill partner
       const partnerName = this.players[playerName].lover;
       removePlayerFromAliveList(partnerName);
