@@ -76,9 +76,28 @@ test('Eliminating player 1', (assert) => {
   assert.end();
 });
 
-// TODO: test win condition function
+test('Check for a winner', async (assert) => {
+  const winner = await gameSession.checkForWinner();
+  const loversAlive = (gameSession.mixLovers && gameSession.loversAlive);
+  const polarbearsAlive = gameSession.alivePolarbears.length > 0;
+  const villagersAlive = gameSession.aliveVillagers.length > 0;
+  if (loversAlive && !polarbearsAlive && !villagersAlive) {
+    assert.equal(winner, 'Lovers', 'Lovers should have won');
+    // TODO: need to skip to end game test
+  } else if (polarbearsAlive && !loversAlive && !villagersAlive) {
+    assert.equal(winner, 'Polarbears', 'Polarbears should have won');
+    // TODO: need to skip to end game test
+  } else if (villagersAlive && !loversAlive && !polarbearsAlive) {
+    assert.equal(winner, 'Villagers', 'Villagers should have won');
+    // TODO: need to skip to end game test
+  } else {
+    assert.equal(winner, 'no winner', 'there should be no winner');
+  }
+  assert.end();
+});
 
 // TODO: test polarbear phase function
+
 // TODO: test little girl phase function
 // TODO: test doctor phase function
 // TODO: test villagers phase function

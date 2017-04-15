@@ -32,8 +32,9 @@ module.exports = function PolarbearSession(chatID) {
   this.alivePolarbears = [];
   this.aliveVillagers = [];
   this.aliveLovers = [];
+  this.winner = '';
   this.id = chatID;
-  this.status = 'initialized'; // initialized, join, stopped, polarbear, littleGirl, doctor, voting, finished
+  this.status = 'initialized'; // initialized, join, stopped, polarbear, littleGirl, doctor, villagers, finished
   this.isTest = false;
   this.timerOptions = {
     join: {
@@ -149,11 +150,25 @@ module.exports = function PolarbearSession(chatID) {
     }
     sendTelegramMessage(msg);
   };
-  polarbearPhase = () => {
+  polarbearPhase = () => new Promise((resolve) => {
+    this.status = 'polarbear';
     // send polarbears a personal msg
     // wait for response
     // if
-  };
+    resolve();
+  });
+  littleGirlPhase = () => new Promise((resolve) => {
+    this.status = 'littleGirl'
+    resolve();
+  });
+  doctorPhase = () => new Promise((resolve) => {
+    this.status = 'doctor';
+    resolve();
+  });
+  villagersPhase = () => new Promise((resolve) => {
+    this.status = 'villagers';
+    resolve();
+  });
   removePlayerFromAliveList = (playerName) => {
     const faction = this.players[playerName].faction;
     this.players[playerName].status = 'dead';
@@ -165,21 +180,35 @@ module.exports = function PolarbearSession(chatID) {
     if (this.players[playerName].isLover) { removePlayerFromAliveList(this.players[playerName].lover); }
     removePlayerFromAliveList(playerName);
   };
-  this.checkForWinner = () => {
-    if (this.mixLovers && this.loversAlive) {
-
+  this.checkForWinner = () => new Promise((resolve) => {
+    const loversAlive = (this.mixLovers && this.loversAlive);
+    const polarbearsAlive = this.alivePolarbears.length > 0;
+    const villagersAlive = this.aliveVillagers.length > 0;
+    if (loversAlive && !polarbearsAlive && !villagersAlive) {
+      this.status = 'finished';
+      resolve('Lovers');
+    } else if (polarbearsAlive && !loversAlive && !villagersAlive) {
+      this.status = 'finished';
+      resolve('Polarbears');
+    } else if (villagersAlive && !loversAlive && !polarbearsAlive) {
+      this.status = 'finished';
+      resolve('Villagers');
     }
-    // is there just one faction left?
-    // is mixLovers? lovers alive? - 3 way fight
-    // else 2 - way fight
-  }
-  this.startGame = () => {
-    this.status = 'polarbear';
+    resolve('no winner');
+  });
+  this.startGame = async () => {
     sendTelegramMessage('The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all.');
     this.assignRoles();
-    // while (true) {
-    //   polarbearPhase();
-    // }
+    while (this.status !== 'finished') {
+      await polarbearPhase();
+      await littleGirlPhase();
+      await doctorPhase();
+      await villagersPhase();
+      this.winner = await this.checkForWinner();
+    }
+  };
+  this.endGame = () => {
+    sendTelegramMessage('Dawn breaks, and the Polarbears have overrun the village. Polarbears win!');
   };
   this.forceStart = () => {
     if (enoughPlayers()) {

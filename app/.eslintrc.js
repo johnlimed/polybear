@@ -11,6 +11,7 @@ module.exports = {
     "node": true,
   },
   "rules": {
+    "no-await-in-loop": 0,
     "no-undef": [2],
     "no-underscore-dangle": ["error", { "allow": ["_id"] }],
     'import/extensions': ['error', 'always', {
