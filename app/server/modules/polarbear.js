@@ -68,7 +68,7 @@ module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) =
           httpsrequests.sendMessage(bodyMessage, `${name} you have already joined the game.`);
         } else {
           // join game
-          activePolarbearSessions[roomID].joinGame(name);
+          activePolarbearSessions[roomID].joinGame(name, bodyMessage.from.id);
           httpsrequests.sendMessage(bodyMessage, `${name} has successfully joined the game!`);
         }
       } else {

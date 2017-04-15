@@ -6,8 +6,9 @@ module.exports = function PolarbearSession(chatID) {
   // const roles = ['polar bear', 'villager'];
   const specialVillagers = ['little girl', 'doctor'];
 
-  function Player(name) {
+  function Player(name, playerID) {
     this.name = name;
+    this.id = playerID;
     this.role = '';
     this.faction = '';
     this.status = 'alive'; // alive, dead
@@ -29,8 +30,11 @@ module.exports = function PolarbearSession(chatID) {
   this.mixLovers = false;
   this.loversAlive = true;
   this.lovers = [];
+  this.littleGirl = '';
+  this.doctor = '';
   this.alivePolarbears = [];
   this.aliveVillagers = [];
+  // TODO: remove aliveLovers... seems not needed
   this.aliveLovers = [];
   this.winner = '';
   this.id = chatID;
@@ -73,12 +77,22 @@ module.exports = function PolarbearSession(chatID) {
   };
   sendTelegramMessage = (msg, parseMode) => {
     if (!this.isTest) {
-      httpsrequests.sendMessage({ chat: { id: this.id } }, msg, parseMode);
+      if (to === 'all') {
+        httpsrequests.sendMessage({ chat: { id: this.id } }, msg, parseMode);
+      } else if (to === 'polarbears') {
+        for (let i = 0; i < this.alivePolarbears.length; i += 1) {
+          httpsrequests.sendMessage({ chat: { id: this.players[this.alivePolarbears[i].name].id } }, msg, parseMode);
+        }
+      } else if (to === 'littleGirl') {
+        // send to user.teleID
+      } else if (to === 'doctor') {
+        // send to user.teleID
+      }
     }
   };
   this.hasPlayerJoined = name => this.playerNameList.includes(name);
-  this.joinGame = (name) => {
-    this.players[name] = new Player(name);
+  this.joinGame = (name, playerID) => {
+    this.players[name] = new Player(name, playerID);
     this.playerNameList.push(name);
     this.status = 'join';
   };
@@ -158,7 +172,7 @@ module.exports = function PolarbearSession(chatID) {
     resolve();
   });
   littleGirlPhase = () => new Promise((resolve) => {
-    this.status = 'littleGirl'
+    this.status = 'littleGirl';
     resolve();
   });
   doctorPhase = () => new Promise((resolve) => {
@@ -206,6 +220,7 @@ module.exports = function PolarbearSession(chatID) {
       await villagersPhase();
       this.winner = await this.checkForWinner();
     }
+    this.endGame();
   };
   this.endGame = () => {
     sendTelegramMessage('Dawn breaks, and the Polarbears have overrun the village. Polarbears win!');
