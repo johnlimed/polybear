@@ -160,23 +160,16 @@ module.exports = function PolarbearSession(chatID) {
     this[`alive${faction}`].splice(playerIndex, 1);
   };
   this.eliminatePlayer = (playerName) => {
-    if (this.players[playerName].isLover) {
-      if (!this.mixLovers) {
-        this.aliveLovers = [];
-      }
-      // kill partner
-      const partnerName = this.players[playerName].lover;
-      removePlayerFromAliveList(partnerName);
-    }
+    if (this.players[playerName].isLover && !this.mixLovers) { this.aliveLovers = []; }
+    if (this.players[playerName].isLover) { removePlayerFromAliveList(this.players[playerName].lover); }
     removePlayerFromAliveList(playerName);
   };
-  // winCondition = () => {
-  //   if (this.mixLovers && this.loversAlive) {
-  //     // check for lovers winning condition
-  //   } else {
-  //     // check normal polarbear vs villagers
-  //   }
-  // }
+  this.checkForWinner = () => {
+    // check for mix lovers
+    // check for polarbear
+      // if polarbears > villagers + doctor's poision
+    // check for villagers
+  }
   this.startGame = () => {
     this.status = 'polarbear';
     sendTelegramMessage('The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all.');
