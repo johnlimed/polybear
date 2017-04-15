@@ -111,6 +111,7 @@ module.exports = function PolarbearSession(chatID) {
       this.players[this.lovers[0]].faction = 'Lovers';
       this.players[this.lovers[1]].faction = 'Lovers';
     }
+    this.loversAlive = true;
     this.aliveLovers = this.lovers.slice(0);
     this.players[this.lovers[0]].lover = this.players[this.lovers[1]].name;
     this.players[this.lovers[1]].lover = this.players[this.lovers[0]].name;
@@ -160,15 +161,17 @@ module.exports = function PolarbearSession(chatID) {
     this[`alive${faction}`].splice(playerIndex, 1);
   };
   this.eliminatePlayer = (playerName) => {
-    if (this.players[playerName].isLover && !this.mixLovers) { this.aliveLovers = []; }
+    if (this.players[playerName].isLover && !this.mixLovers) { this.aliveLovers = []; this.loversAlive = false; }
     if (this.players[playerName].isLover) { removePlayerFromAliveList(this.players[playerName].lover); }
     removePlayerFromAliveList(playerName);
   };
   this.checkForWinner = () => {
-    // check for mix lovers
-    // check for polarbear
-      // if polarbears > villagers + doctor's poision
-    // check for villagers
+    if (this.mixLovers && this.loversAlive) {
+
+    }
+    // is there just one faction left?
+    // is mixLovers? lovers alive? - 3 way fight
+    // else 2 - way fight
   }
   this.startGame = () => {
     this.status = 'polarbear';

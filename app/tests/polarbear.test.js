@@ -43,6 +43,7 @@ test('Assigning of roles', (assert) => {
     assert.equal(gameSession.mixLovers, false, `lovers are from same factions: ${gameSession.players[gameSession.lovers[1]].faction}`);
     assert.equal(gameSession[`alive${gameSession.players[gameSession.lovers[1]].faction}`].length, gameSession[`num${gameSession.players[gameSession.lovers[1]].faction}`], `number of ${gameSession.players[gameSession.lovers[1]].faction} should be same as total: ${gameSession[`num${gameSession.players[gameSession.lovers[1]].faction}`]}`);
   }
+  assert.equal(gameSession.loversAlive, true, 'loversAlive has been set to true');
   assert.end();
 });
 
