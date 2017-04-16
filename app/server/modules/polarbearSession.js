@@ -4,6 +4,7 @@ const httpsrequests = require('./httpsrequests');
 module.exports = function PolarbearSession(chatID) {
   // const factions = ['Villagers', 'Polarbears', 'Lovers'];
   // const roles = ['polar bear', 'villager'];
+  const minPlayers = 5;
   const specialVillagers = ['little girl', 'doctor'];
 
   function Player(name, playerID) {
@@ -20,7 +21,7 @@ module.exports = function PolarbearSession(chatID) {
     this.setIsLover = (isLover) => { this.isLover = isLover; };
     this.setLover = (lover) => { this.lover = lover; };
   }
-  const minPlayers = 5;
+  this.id = chatID;
   this.maxPlayers = 20;
   this.numPolarbears = 1;
   this.numVillagers = 4;
@@ -34,10 +35,10 @@ module.exports = function PolarbearSession(chatID) {
   this.doctor = '';
   this.alivePolarbears = [];
   this.aliveVillagers = [];
+  this.votingArray = [];
   // TODO: remove aliveLovers... seems not needed
   this.aliveLovers = [];
   this.winner = '';
-  this.id = chatID;
   this.status = 'initialized'; // initialized, join, stopped, polarbear, littleGirl, doctor, villagers, finished
   this.isTest = false;
   this.timerOptions = {
@@ -60,14 +61,30 @@ module.exports = function PolarbearSession(chatID) {
         sendTelegramMessage('You need more Polarbears. Game did not start. Try again later.');
       },
     },
+    action: {
+      tick: 1,
+      ontick: (ms) => {
+        if (Math.round(ms / 1000) === 30) {
+          // if 30 sec remaining
+          // sendTelegramMessage(`${Math.round(ms / 1000)} sec left to joined the game!`);
+        } else if ((Math.round(ms / 1000) < 10) && (Math.round(ms / 1000) % 1 === 0)) {
+          // for every second less than 10 sec:
+          // sendTelegramMessage(`${Math.round(ms / 1000)} sec left to joined the game!`);
+        } else if (Math.round(ms / 1000) % 60 === 0) {
+          // for every other minute:
+          // sendTelegramMessage(`${Math.round(ms / 1000 / 60)} min left to joined the game!`);
+        }
+      },
+    },
   };
   this.timers = {
     join: {
       timer: new Timer(this.timerOptions.join),
       duration: 2 * 60,
     },
+    // TODO: maybe need to remove this... as the polarbear, doctor & little girl needs to be initialized in their functions?
     action: {
-      timer: new Timer(),
+      timer: new Timer(this.timerOptions.action),
       duration: 2 * 60,
     },
     vote: {
@@ -185,13 +202,38 @@ module.exports = function PolarbearSession(chatID) {
   };
   this.polarbearPhase = () => new Promise((resolve) => {
     this.status = 'polarbear';
+    this.votingArray = [];
+    const votes = {};
+    let mostVotes;
+    let mostVotesCount = 0;
     sendTelegramMessage(`Polarbears please check your inbox I have given you instructions! You have ${this.getTimerDuration('action')} min to act!.`);
     sendTelegramMessage(`Polarbears please wake up, select your meal for the night. You have ${this.getTimerDuration('action')} min to make up your mind. Otherwise it would have been an unsuccessful hunt!`, 'polarbears');
     sendTelegramMessage('Please consult your other polarbears. If there is no unanimous vote, the villager with the majority vote will be hunted.', 'polarbears');
+    this.timers.action.timer.start(this.timers[timerName].duration).on('end', () => {
+      console.log('End of polarbear phase!');
+      if (votingArray.length > 0) {
+        // nobody to kill
+        // send message
+      } else {
+        for (let i = 0; i < votingArray.length; i += 1) {
+          if (votes[votingArray[i]]) {
+            votes[votingArray[i]] += 1;
+          } else {
+            votes[votingArray[i]] = 0;
+          }
+          if (votes[votingArray[i]] > mostVotesCount) {
+            mostVotesCount = votes[votingArray[i]];
+            mostVotes = votingArray[i];
+          }
+        }
+        this.eliminatePlayer(mostVotes);
+        // send message
+      }
+      resolve();
+    });
     // send polarbears a personal msg
     // wait for response
     // if
-    resolve();
   });
   littleGirlPhase = () => new Promise((resolve) => {
     this.status = 'littleGirl';
