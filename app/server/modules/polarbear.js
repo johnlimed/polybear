@@ -111,6 +111,12 @@ module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) =
       resolve({ code: 200, msg: 'OK!' });
       break;
     }
+    // case '/test': {
+    //   activePolarbearSessions[roomID].alivePolarbears.push({name});
+    //   await activePolarbearSessions[roomID].polarbearPhase();
+    //   resolve({ code: 200, msg: 'OK!' });
+    //   break;
+    // }
     default: {
       httpsrequests.sendMessage(bodyMessage, `${name} I cannot understand you... please speak polar bear`);
       resolve({ code: 200, msg: 'OK!' });

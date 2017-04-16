@@ -68,14 +68,15 @@ module.exports = function PolarbearSession(chatID) {
     },
     action: {
       timer: new Timer(),
-      duration: 10,
+      duration: 2 * 60,
     },
     vote: {
       timer: new Timer(),
       duration: 10,
     },
   };
-  sendTelegramMessage = (msg, parseMode) => {
+  sendTelegramMessage = (msg, sendingTo, parseMode) => {
+    const to = sendingTo || 'all';
     if (!this.isTest) {
       if (to === 'all') {
         httpsrequests.sendMessage({ chat: { id: this.id } }, msg, parseMode);
@@ -85,8 +86,10 @@ module.exports = function PolarbearSession(chatID) {
         }
       } else if (to === 'littleGirl') {
         // send to user.teleID
+        httpsrequests.sendMessage({ chat: { id: this.players[this.littleGirl].id } }, msg, parseMode);
       } else if (to === 'doctor') {
         // send to user.teleID
+        httpsrequests.sendMessage({ chat: { id: this.players[this.doctor].id } }, msg, parseMode);
       }
     }
   };
@@ -107,6 +110,11 @@ module.exports = function PolarbearSession(chatID) {
     this.players[playerName].setFaction(faction);
     this[`alive${faction}`].push(playerName);
     uninitializedPlayers.splice(playerArrayID, 1);
+    if (role === 'little girl') {
+      this.littleGirl = playerName;
+    } else if (role === 'doctor') {
+      this.doctor = playerName;
+    }
   };
   setLovers = () => {
     const uninitializedPlayers = this.playerNameList.slice(0);
@@ -164,25 +172,6 @@ module.exports = function PolarbearSession(chatID) {
     }
     sendTelegramMessage(msg);
   };
-  polarbearPhase = () => new Promise((resolve) => {
-    this.status = 'polarbear';
-    // send polarbears a personal msg
-    // wait for response
-    // if
-    resolve();
-  });
-  littleGirlPhase = () => new Promise((resolve) => {
-    this.status = 'littleGirl';
-    resolve();
-  });
-  doctorPhase = () => new Promise((resolve) => {
-    this.status = 'doctor';
-    resolve();
-  });
-  villagersPhase = () => new Promise((resolve) => {
-    this.status = 'villagers';
-    resolve();
-  });
   removePlayerFromAliveList = (playerName) => {
     const faction = this.players[playerName].faction;
     this.players[playerName].status = 'dead';
@@ -194,6 +183,32 @@ module.exports = function PolarbearSession(chatID) {
     if (this.players[playerName].isLover) { removePlayerFromAliveList(this.players[playerName].lover); }
     removePlayerFromAliveList(playerName);
   };
+  this.polarbearPhase = () => new Promise((resolve) => {
+    this.status = 'polarbear';
+    sendTelegramMessage(`Polarbears please check your inbox I have given you instructions! You have ${this.getTimerDuration('action')} min to act!.`);
+    sendTelegramMessage(`Polarbears please wake up, select your meal for the night. You have ${this.getTimerDuration('action')} min to make up your mind. Otherwise it would have been an unsuccessful hunt!`, 'polarbears');
+    sendTelegramMessage('Please consult your other polarbears. If there is no unanimous vote, the villager with the majority vote will be hunted.', 'polarbears');
+    // send polarbears a personal msg
+    // wait for response
+    // if
+    resolve();
+  });
+  littleGirlPhase = () => new Promise((resolve) => {
+    this.status = 'littleGirl';
+    sendTelegramMessage(`Little girl please check your inbox I have given you instructions! You have ${this.getTimerDuration('action')} min to act!.`);
+    sendTelegramMessage(`Little girl please wake up, select on who you want to spy on. You have ${this.getTimerDuration('action')} min to make up your mind. Otherwise you would have slept in!`, 'little girl');
+    resolve();
+  });
+  doctorPhase = () => new Promise((resolve) => {
+    this.status = 'doctor';
+    sendTelegramMessage(`Doctor please check your inbox I have given you instructions! You have ${this.getTimerDuration('action')} min to act!.`);
+    sendTelegramMessage(`Doctor please wake up, . You have ${this.getTimerDuration('action')} min to make up your mind. Otherwise you would have slept in!`, 'doctor');
+    resolve();
+  });
+  villagersPhase = () => new Promise((resolve) => {
+    this.status = 'villagers';
+    resolve();
+  });
   this.checkForWinner = () => new Promise((resolve) => {
     const loversAlive = (this.mixLovers && this.loversAlive);
     const polarbearsAlive = this.alivePolarbears.length > 0;
@@ -214,7 +229,7 @@ module.exports = function PolarbearSession(chatID) {
     sendTelegramMessage('The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all.');
     this.assignRoles();
     while (this.status !== 'finished') {
-      await polarbearPhase();
+      await this.polarbearPhase();
       await littleGirlPhase();
       await doctorPhase();
       await villagersPhase();
@@ -234,11 +249,13 @@ module.exports = function PolarbearSession(chatID) {
       sendTelegramMessage('You dont have enough Polarbears. Cannot start game. Wait for more Polarbears to /join.');
     }
   };
+  this.stopTimer = (timerName) => { this.timers[timerName].timer.stop(); };
   this.startTimer = (timerName) => { this.timers[timerName].timer.start(this.timers[timerName].duration); };
+  this.restartTimer = (timerName) => { this.timers[timerName].timer = new Timer(this.timers[timerName].duration / 60); }
   this.getTimerDuration = timerName => this.timers[timerName].duration / 60;
   this.extendTimer = (timerName) => {
-    this.timers[timerName].timer.stop();
-    this.timers[timerName].timer = new Timer(this.timerOptions.join);
+    this.stopTimer(timerName);
+    this.restartTimer(timerName);
     this.startTimer(timerName);
   };
   this.getStatus = () => this.status;
