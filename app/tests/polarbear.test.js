@@ -47,6 +47,17 @@ test('Assigning of roles', (assert) => {
   assert.end();
 });
 
+// TODO: test polarbear phase function
+test('Simulating polarbear phase', async (assert) => {
+  gameSession.polarbearPhase();
+  assert.equal(gameSession.status, 'polarbear', 'status should be set to polarbear');
+  gameSession.voteFor('player1');
+  assert.equal(gameSession.votingArray.length, 1, 'there should be one vote casted');
+  assert.equal(gameSession.votingArray[0], 'player1', 'vote should be for player1');
+  gameSession.stopTimer('action');
+  assert.end();
+});
+
 test('Eliminating player 1', (assert) => {
   gameSession.eliminatePlayer('player1');
   assert.equal(gameSession.players.player1.status, 'dead', 'player1\'s status should be dead');
@@ -95,8 +106,6 @@ test('Check for a winner', async (assert) => {
   }
   assert.end();
 });
-
-// TODO: test polarbear phase function
 
 // TODO: test little girl phase function
 // TODO: test doctor phase function

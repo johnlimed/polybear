@@ -32,7 +32,14 @@ module.exports = function PolarbearSession(chatID) {
   this.loversAlive = true;
   this.lovers = [];
   this.littleGirl = '';
+  this.littleGirlSpyOn = '';
   this.doctor = '';
+  this.doctorAction = {
+    usePotion: false,
+    usePoison: false,
+    healed: '',
+    poisoned: '',
+  };
   this.alivePolarbears = [];
   this.aliveVillagers = [];
   this.votingArray = [];
@@ -196,60 +203,112 @@ module.exports = function PolarbearSession(chatID) {
     this[`alive${faction}`].splice(playerIndex, 1);
   };
   this.eliminatePlayer = (playerName) => {
-    if (this.players[playerName].isLover && !this.mixLovers) { this.aliveLovers = []; this.loversAlive = false; }
-    if (this.players[playerName].isLover) { removePlayerFromAliveList(this.players[playerName].lover); }
-    removePlayerFromAliveList(playerName);
+    if (this.players[playerName].status === 'alive') {
+      if (this.players[playerName].isLover && !this.mixLovers) { this.aliveLovers = []; this.loversAlive = false; }
+      if (this.players[playerName].isLover) { removePlayerFromAliveList(this.players[playerName].lover); }
+      removePlayerFromAliveList(playerName);
+    }
+  };
+  this.voteFor = (playerName) => {
+    this.votingArray.push(playerName);
   };
   this.polarbearPhase = () => new Promise((resolve) => {
     this.status = 'polarbear';
     this.votingArray = [];
-    const votes = {};
+    const voteCount = {};
     let mostVotes;
     let mostVotesCount = 0;
     sendTelegramMessage(`Polarbears please check your inbox I have given you instructions! You have ${this.getTimerDuration('action')} min to act!.`);
     sendTelegramMessage(`Polarbears please wake up, select your meal for the night. You have ${this.getTimerDuration('action')} min to make up your mind. Otherwise it would have been an unsuccessful hunt!`, 'polarbears');
     sendTelegramMessage('Please consult your other polarbears. If there is no unanimous vote, the villager with the majority vote will be hunted.', 'polarbears');
-    this.timers.action.timer.start(this.timers[timerName].duration).on('end', () => {
+    this.timers.action.timer.start(this.timers.action.duration).on('end', () => {
       console.log('End of polarbear phase!');
-      if (votingArray.length > 0) {
+      if (this.votingArray.length === 0) {
         // nobody to kill
         // send message
       } else {
-        for (let i = 0; i < votingArray.length; i += 1) {
-          if (votes[votingArray[i]]) {
-            votes[votingArray[i]] += 1;
+        for (let i = 0; i < this.votingArray.length; i += 1) {
+          if (voteCount[votingArray[i]]) {
+            voteCount[votingArray[i]] += 1;
           } else {
-            votes[votingArray[i]] = 0;
+            voteCount[votingArray[i]] = 1;
           }
-          if (votes[votingArray[i]] > mostVotesCount) {
-            mostVotesCount = votes[votingArray[i]];
+          if (voteCount[votingArray[i]] > mostVotesCount) {
+            mostVotesCount = voteCount[votingArray[i]];
             mostVotes = votingArray[i];
           }
         }
-        this.eliminatePlayer(mostVotes);
-        // send message
+        // TODO: send message to polarbears about selection
       }
-      resolve();
+      resolve(mostVotes);
     });
-    // send polarbears a personal msg
-    // wait for response
-    // if
+    // TODO: get the array of alive villagers and send them to the polarbears for selection
+    // send polarbears a personal msg to get their selection
   });
-  littleGirlPhase = () => new Promise((resolve) => {
+  this.littleGirlPhase = () => new Promise((resolve) => {
     this.status = 'littleGirl';
     sendTelegramMessage(`Little girl please check your inbox I have given you instructions! You have ${this.getTimerDuration('action')} min to act!.`);
     sendTelegramMessage(`Little girl please wake up, select on who you want to spy on. You have ${this.getTimerDuration('action')} min to make up your mind. Otherwise you would have slept in!`, 'little girl');
-    resolve();
+    this.timers.action.timer.start(this.timers.action.duration).on('end', () => {
+      console.log('End of Little Girl phase!');
+      if (this.littleGirlSpyOn === '') {
+        // nobody selected..
+        // slept in
+        // TODO: send message that you slept in
+      } else {
+        // TODO: send message with options
+        // send selected player's details to little girl
+        const peekPlayerName = this.littleGirlSpyOn;
+      }
+      resolve();
+    });
+    // send options to select player
   });
-  doctorPhase = () => new Promise((resolve) => {
+  this.doctorPhase = (playerKilledByPolarbears, playersToKill) => new Promise((resolve) => {
     this.status = 'doctor';
     sendTelegramMessage(`Doctor please check your inbox I have given you instructions! You have ${this.getTimerDuration('action')} min to act!.`);
     sendTelegramMessage(`Doctor please wake up, . You have ${this.getTimerDuration('action')} min to make up your mind. Otherwise you would have slept in!`, 'doctor');
-    resolve();
+    this.timers.action.timer.start(this.timers.action.duration).on('end', () => {
+      console.log('End of Doctor phase!');
+      if (!this.doctorAction.usePotion) {
+        // doctor did not heal, put player into kill array
+        playersToKill.push(playerKilledByPolarbears);
+      }
+      if (this.doctorAction.usePoision) {
+        // poison player, put player into kill array
+        playersToKill.push(this.doctorAction.poisoned);
+      }
+      resolve();
+    });
+    // TODO: send message to doctor and ask for his selection
   });
   villagersPhase = () => new Promise((resolve) => {
     this.status = 'villagers';
-    resolve();
+    this.votingArray = [];
+    const voteCount = {};
+    let mostVotes;
+    let mostVotesCount = 0;
+    this.timers.action.timer.start(this.timers.action.duration).on('end', () => {
+      console.log('End of Villagers phase!');
+      if (this.votingArray.length === 0) {
+        // TODO: kill nobody
+      } else {
+        for (let i = 0; i < this.votingArray.length; i += 1) {
+          if (voteCount[votingArray[i]]) {
+            voteCount[votingArray[i]] += 1;
+          } else {
+            voteCount[votingArray[i]] = 1;
+          }
+          if (voteCount[votingArray[i]] > mostVotesCount) {
+            mostVotesCount = voteCount[votingArray[i]];
+            mostVotes = votingArray[i];
+          }
+        }
+      }
+      // TODO: send message to all about selection
+      resolve(mostVotes);
+    });
+    // TODO: send messages to villagers
   });
   this.checkForWinner = () => new Promise((resolve) => {
     const loversAlive = (this.mixLovers && this.loversAlive);
@@ -271,10 +330,14 @@ module.exports = function PolarbearSession(chatID) {
     sendTelegramMessage('The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all.');
     this.assignRoles();
     while (this.status !== 'finished') {
-      await this.polarbearPhase();
-      await littleGirlPhase();
-      await doctorPhase();
-      await villagersPhase();
+      const playersToKill = []
+      const playerSelectedByPolarbears = await this.polarbearPhase();
+      await this.littleGirlPhase();
+      await this.doctorPhase(playerSelectedByPolarbears, playersToKill);
+      // elimination decision
+      // TODO: eliminate player if necessary
+      const killedByVillagers = await this.villagersPhase();
+      // TODO: eliminate palyer
       this.winner = await this.checkForWinner();
     }
     this.endGame();
@@ -293,7 +356,7 @@ module.exports = function PolarbearSession(chatID) {
   };
   this.stopTimer = (timerName) => { this.timers[timerName].timer.stop(); };
   this.startTimer = (timerName) => { this.timers[timerName].timer.start(this.timers[timerName].duration); };
-  this.restartTimer = (timerName) => { this.timers[timerName].timer = new Timer(this.timers[timerName].duration / 60); }
+  this.restartTimer = (timerName) => { this.timers[timerName].timer = new Timer(this.timers[timerName].duration / 60); };
   this.getTimerDuration = timerName => this.timers[timerName].duration / 60;
   this.extendTimer = (timerName) => {
     this.stopTimer(timerName);
