@@ -1,11 +1,38 @@
 const Timer = require('timer.js');
-const sendTelegramMessage = require('./telegram').sendMessage;
+const Telegram = require('./telegram');
 
 module.exports = function PolarbearSession(chatID) {
-  // const factions = ['Villagers', 'Polarbears', 'Lovers'];
-  // const roles = ['polar bear', 'villager'];
   const minPlayers = 5;
   const specialVillagers = ['little girl', 'doctor'];
+
+  sendTelegramMessage = (msg, receiver) => {
+    try {
+      const receiverIDs = [];
+      if (receiver === 'all') {
+        receiverIDs.push(this.id);
+      } else if (receiver === 'polarbears') {
+        this.alivePolarbears.map(polarbear => receiverIDs.push(this.players[polarbear.name].id));
+        // for (let i = 0; i < this.alivePolarbears.length; i += 1) {
+        //   receiverIDs.push(this.players[this.alivePolarbears[i].name].id);
+        // }
+      } else if (receiver === 'littleGirl') {
+        // send to user.teleID
+        receiverIDs.push(this.players[this.littleGirl].id);
+      } else if (receiver === 'doctor') {
+        // send to user.teleID
+        receiverIDs.push(this.players[this.doctor].id);
+      } else {
+        receiverIDs.push(this.id);
+      }
+      if (!this.isTest) {
+        console.log(`sending messages to: ${JSON.stringify(receiverIDs)}`);
+        receiverIDs.map(chatRoomID => Telegram.sendMessage(chatRoomID, msg));
+      }
+    } catch (err) {
+      console.log('error while trying to send telegram message [polarbearSession]');
+      console.log(err);
+    }
+  };
 
   function Player(name, playerID) {
     this.name = name;

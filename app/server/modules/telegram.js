@@ -1,27 +1,23 @@
 const httpsrequests = require('./httpsrequests');
+const teleConfig = require('../config/telegramConfig');
 
 createReplyKeyboardMarkup = (keyboardButtonOptions) => {
 
 };
 
-sendMessage = (msg, sendingTo, parseMode) => {
-  const to = sendingTo || 'all';
-  if (!this.isTest) {
-    if (to === 'all') {
-      httpsrequests.sendMessage({ chat: { id: this.id } }, msg, parseMode);
-    } else if (to === 'polarbears') {
-      for (let i = 0; i < this.alivePolarbears.length; i += 1) {
-        httpsrequests.sendMessage({ chat: { id: this.players[this.alivePolarbears[i].name].id } }, msg, parseMode);
-      }
-    } else if (to === 'littleGirl') {
-      // send to user.teleID
-      httpsrequests.sendMessage({ chat: { id: this.players[this.littleGirl].id } }, msg, parseMode);
-    } else if (to === 'doctor') {
-      // send to user.teleID
-      httpsrequests.sendMessage({ chat: { id: this.players[this.doctor].id } }, msg, parseMode);
-    }
-  }
+initializeWebhook = () => {
+  console.log('Setting up telegram webhook!');
+  const payload = { url: `https://37f6f72c.ngrok.io/webhook/${teleConfig.token}` };
+  const uri = `https://api.telegram.org/bot${teleConfig.token}/setWebhook`;
+  httpsrequests.post(payload, uri);
+};
+
+sendMessage = (chatID, msg, parseMode) => {
+  const payload = { chat_id: chatID, text: msg, parse_mode: parseMode };
+  const uri = `https://api.telegram.org/bot${teleConfig.token}/sendMessage`;
+  httpsrequests.post(payload, uri);
 };
 
 module.exports.createReplyKeyboardMarkup = createReplyKeyboardMarkup;
+module.exports.initializeWebhook = initializeWebhook;
 module.exports.sendMessage = sendMessage;

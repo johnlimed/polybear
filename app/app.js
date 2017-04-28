@@ -6,7 +6,7 @@ const rethink = require('./server/modules/rethink');
 const http = require('http');
 const https = require('https');
 const certificates = require('./server/config/certificates');
-const httpsrequests = require('./server/modules/httpsrequests');
+const Telegram = require('./server/modules/telegram');
 
 const app = express();
 const port = {
@@ -32,8 +32,7 @@ runServer = async (appServer) => {
 		https.createServer(options, appServer).listen(port.https, () => {
 			console.log(`HTTPS server listening on *: ${port.https}`);
 			console.log(`Server is on: ${process.env.NODE_ENV}`);
-
-			httpsrequests.setupWebhook();
+			Telegram.initializeWebhook();
 		});
 	} catch (err) {
 		console.log('Error caught while trying to run server ', err);
