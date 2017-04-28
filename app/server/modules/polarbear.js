@@ -7,18 +7,18 @@ const activePolarbearSessions = {};
 
 alreadyRunningGame = roomID => activePolarbearGames.includes(roomID);
 getPolarbearSession = roomID => activePolarbearSessions[roomID];
-createGame = (roomID, name) => {
+createGame = (roomID, name, pID) => {
   activePolarbearGames.push(roomID);
   activePolarbearSessions[roomID] = new PolarbearSession(roomID);
-  activePolarbearSessions[roomID].joinGame(name);
-  console.log(`activePolarbearGames: ${activePolarbearGames}`);
-  console.log(`activePolarbearSessions: ${activePolarbearSessions}`);
-  console.log(activePolarbearSessions);
+  activePolarbearSessions[roomID].joinGame(name, pID);
+  console.log(`activePolarbearGames: ${JSON.stringify(activePolarbearGames, null, 2)}`);
+  console.log(`activePolarbearSessions: ${JSON.stringify(activePolarbearSessions, null, 2)}`);
+  console.log(JSON.stringify(activePolarbearSessions, null, 2));
   return activePolarbearSessions[roomID];
 };
-sendMessage = (bodyMessage, msg) => {
+sendMessage = (bodyMessage, msg, keyboard) => {
   const id = bodyMessage.chat.id;
-  Telegram.sendMessage(id, msg);
+  Telegram.sendMessage(id, msg, keyboard);
 };
 
 module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) => {
@@ -30,10 +30,10 @@ module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) =
     case '/register@poly_polarbear_bot': {
       try {
         const result = await rethink.registerUser(sender.id, name, bodyMessage.chat.id);
-        if (result.alreadyRegistered) { httpsrequests.sendMessage(bodyMessage, `${name} you are already a polar bear. Stop trying to be one.`); } else if (result.error) {
+        if (result.alreadyRegistered) { sendMessage(bodyMessage, `${name} you are already a polar bear. Stop trying to be one.`); } else if (result.error) {
           sendMessage(bodyMessage, `I broke trying to register you... ${result.error}`);
           reject(result.error);
-        } else { httpsrequests.sendMessage(bodyMessage, `${name} turned into a polar bear. Welcome!`); }
+        } else { sendMessage(bodyMessage, `${name} turned into a polar bear. Welcome!`); }
         resolve({ code: 200, msg: 'OK!' });
       } catch (err) { reject(err); }
       break;
@@ -43,7 +43,7 @@ module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) =
       try {
         if (alreadyRunningGame(roomID)) {
           activePolarbearSessions[roomID].getPlayerList();
-        } else { httpsrequests.sendMessage(bodyMessage, 'There isn\'t a game running, start a polar bear game with /start.'); }
+        } else { sendMessage(bodyMessage, 'There isn\'t a game running, start a polar bear game with /start.'); }
         resolve({ code: 200, msg: 'OK!' });
       } catch (err) { reject(err); }
       break;
@@ -72,7 +72,7 @@ module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) =
           sendMessage(bodyMessage, `${name} you have already joined the game.`);
         } else {
           // join game
-          activePolarbearSessions[roomID].joinGame(name, bodyMessage.from.id);
+          activePolarbearSessions[roomID].joinGame(name, sender.id);
           sendMessage(bodyMessage, `${name} has successfully joined the game!`);
         }
       } else {
@@ -103,7 +103,7 @@ module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) =
         sendMessage(bodyMessage, 'Polar bears are already gathering to start a game. /join that one!');
         resolve({ code: 200, msg: 'OK!' });
       } else {
-        const polarbearGame = createGame(roomID, name);
+        const polarbearGame = createGame(roomID, name, sender.id);
         polarbearGame.startTimer('join');
         sendMessage(bodyMessage, `${name} has started and joined a game! Calling all Polarbears to /join! You have ${polarbearGame.getTimerDuration('join')} minutes to join!`);
         resolve({ code: 200, msg: 'OK!' });
@@ -115,12 +115,14 @@ module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) =
       resolve({ code: 200, msg: 'OK!' });
       break;
     }
-    // case '/test': {
-    //   activePolarbearSessions[roomID].alivePolarbears.push({name});
-    //   await activePolarbearSessions[roomID].polarbearPhase();
-    //   resolve({ code: 200, msg: 'OK!' });
-    //   break;
-    // }
+    case '/test': {
+      sendMessage(bodyMessage, 'received your message... you da best');
+      const hello = await Telegram.createReplyKeyboardMarkup(['/startgame', '/hello', '/hello', '/hello']);
+      console.log(`i shld be here: ${JSON.stringify(hello)}`);
+      sendMessage(bodyMessage, 'you da best', hello);
+      resolve({ code: 200, msg: 'OK!' });
+      break;
+    }
     default: {
       sendMessage(bodyMessage, `${name} I cannot understand you... please speak polar bear`);
       resolve({ code: 200, msg: 'OK!' });

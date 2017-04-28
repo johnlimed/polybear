@@ -1,9 +1,20 @@
 const httpsrequests = require('./httpsrequests');
 const teleConfig = require('../config/telegramConfig');
 
-createReplyKeyboardMarkup = (keyboardButtonOptions) => {
-
+createKeyboardButton = async (keyboardButtonOptions) => {
+  const arrayOfKeyboardButtons = keyboardButtonOptions.map(option => ([{ text: option }]));
+  const result = await Promise.all(arrayOfKeyboardButtons);
+  return result;
 };
+
+createReplyKeyboardMarkup = keyboardButtonOptions => new Promise(async (resolve) => {
+  try {
+    const keyboard = await createKeyboardButton(keyboardButtonOptions);
+    resolve({ keyboard, one_time_keyboard: true });
+  } catch (err) {
+    console.log(err);
+  }
+});
 
 initializeWebhook = () => {
   console.log('Setting up telegram webhook!');
@@ -12,8 +23,8 @@ initializeWebhook = () => {
   httpsrequests.post(payload, uri);
 };
 
-sendMessage = (chatID, msg, parseMode) => {
-  const payload = { chat_id: chatID, text: msg, parse_mode: parseMode };
+sendMessage = (chatID, msg, keyboard) => {
+  const payload = { chat_id: chatID, text: msg, reply_markup: keyboard };
   const uri = `https://api.telegram.org/bot${teleConfig.token}/sendMessage`;
   httpsrequests.post(payload, uri);
 };
