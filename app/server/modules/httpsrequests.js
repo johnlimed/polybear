@@ -5,7 +5,7 @@ const teleConfig = require('../config/telegramConfig');
 module.exports = {
   setupWebhook: () => {
     console.log('Setting up telegram webhook!');
-    const payload = { url: `https://06954e1b.ngrok.io/webhook/${teleConfig.token}` };
+    const payload = { url: `https://37f6f72c.ngrok.io/webhook/${teleConfig.token}` };
     const options = {
       method: 'POST',
       uri: `https://api.telegram.org/bot${teleConfig.token}/setWebhook`,
