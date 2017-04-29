@@ -14,7 +14,7 @@ createGame = (roomID, name, pID) => {
     activePolarbearSessions[roomID].joinGame(name, pID);
     console.log(`activePolarbearGames: ${JSON.stringify(activePolarbearGames, null, 2)}`);
     console.log('activePolarbearSessions: ');
-    console.log(activePolarbearSessions)
+    console.log(activePolarbearSessions);
     return activePolarbearSessions[roomID];
   } catch (err) {
     console.log('caught error while trying to create Game [polarbear]');
@@ -61,7 +61,7 @@ module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) =
           sendMessage(bodyMessage, `${name} there isn't any polarbears around. /start a game now!`);
         } else if (activePolarbearSessions[roomID].getStatus() === 'join') {
           activePolarbearSessions[roomID].extendTimer('join');
-          sendMessage(bodyMessage, `${name} extended the timer. Come on you polarbears! ${activePolarbearSessions[roomID].getTimerDuration('join')} minutes to join.`);
+          sendMessage(bodyMessage, `${name} extended the timer. Come on you polarbears! ${activePolarbearSessions[roomID].getTimerDuration('join')} minutes to /join.`);
         } else {
           console.log(activePolarbearSessions[roomID].getStatus());
         }

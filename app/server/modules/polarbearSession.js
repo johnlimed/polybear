@@ -12,7 +12,10 @@ module.exports = function PolarbearSession(chatID) {
       this.alivePolarbears.map(polarbear => receiverIDs.push(this.players[polarbear.name].id));
       this.aliveVillagers.map(villager => receiverIDs.push(this.players[villager.name].id));
     } else if (receiver === 'polarbears') {
-      this.alivePolarbears.map(polarbear => receiverIDs.push(this.players[polarbear.name].id));
+      this.alivePolarbears.map((polarbear) => {
+        console.log(polarbear);
+        return receiverIDs.push(this.players[polarbear.name].id);
+      });
       // for (let i = 0; i < this.alivePolarbears.length; i += 1) {
       //   receiverIDs.push(this.players[this.alivePolarbears[i].name].id);
       // }
@@ -47,20 +50,18 @@ module.exports = function PolarbearSession(chatID) {
       const msg = `You are a ${this.players[villager].role}!`;
       return Telegram.sendMessage(this.players[villager].id, msg);
     });
-    await Promise.all(villagerPromise);
     const polarbearPromise = this.alivePolarbears.map((polarbear) => {
       console.log(`polarbear: ${polarbear} ${this.players[polarbear].id} ${this.players[polarbear].role}`);
-      const polarbears = joinPlayerNames(this.alivePolarbears);
+      const polarbears = this.joinPlayersNames(this.alivePolarbears);
       const msg = `You are a ${this.players[polarbear].role}! The polarbears are: ${polarbears}`;
       return Telegram.sendMessage(this.players[polarbear].id, msg);
     });
-    await Promise.all(polarbearPromise);
     const loversPromise = this.aliveLovers.map((lover) => {
       console.log(`lover: ${lover}`);
       const msg = `And you are in love with: ${JSON.stringify(this.aliveLovers, null, 2)}!`;
       return Telegram.sendMessage(this.players[lover].id, msg);
     });
-    await Promise.all(loversPromise);
+    await Promise.all(loversPromise, villagerPromise, polarbearPromise);
   };
 
   this.notifyPlayers = async (msg, receiver) => {
@@ -174,7 +175,7 @@ module.exports = function PolarbearSession(chatID) {
   this.timers = {
     join: {
       timer: new Timer(this.timerOptions.join),
-      duration: 2 * 60,
+      duration: 5 * 60,
     },
     // TODO: maybe need to remove this... as the polarbear, doctor & little girl needs to be initialized in their functions?
     action: {
@@ -326,6 +327,7 @@ module.exports = function PolarbearSession(chatID) {
       // TODO: send message with options
       // send selected player's details to little girl
       const peekPlayerName = this.littleGirlSpyOn;
+      console.log(peekPlayerName);
       resolve();
     });
   });
