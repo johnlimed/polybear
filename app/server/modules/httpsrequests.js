@@ -17,6 +17,7 @@ module.exports = {
         console.log('there was an error with the request ', err);
       } else {
         console.log('successfully sent a message!');
+        console.log(payload)
       }
     });
   },

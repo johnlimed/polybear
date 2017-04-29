@@ -8,13 +8,19 @@ const activePolarbearSessions = {};
 alreadyRunningGame = roomID => activePolarbearGames.includes(roomID);
 getPolarbearSession = roomID => activePolarbearSessions[roomID];
 createGame = (roomID, name, pID) => {
-  activePolarbearGames.push(roomID);
-  activePolarbearSessions[roomID] = new PolarbearSession(roomID);
-  activePolarbearSessions[roomID].joinGame(name, pID);
-  console.log(`activePolarbearGames: ${JSON.stringify(activePolarbearGames, null, 2)}`);
-  console.log(`activePolarbearSessions: ${JSON.stringify(activePolarbearSessions, null, 2)}`);
-  console.log(JSON.stringify(activePolarbearSessions, null, 2));
-  return activePolarbearSessions[roomID];
+  try {
+    activePolarbearGames.push(roomID);
+    activePolarbearSessions[roomID] = new PolarbearSession(roomID);
+    activePolarbearSessions[roomID].joinGame(name, pID);
+    console.log(`activePolarbearGames: ${JSON.stringify(activePolarbearGames, null, 2)}`);
+    console.log('activePolarbearSessions: ');
+    console.log(activePolarbearSessions)
+    return activePolarbearSessions[roomID];
+  } catch (err) {
+    console.log('caught error while trying to create Game [polarbear]');
+    console.log(err);
+    return false;
+  }
 };
 sendMessage = (bodyMessage, msg, keyboard) => {
   const id = bodyMessage.chat.id;
@@ -118,16 +124,20 @@ module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) =
       if (alreadyRunningGame(roomID)) {
         console.log('Stopping your game.');
         activePolarbearSessions[roomID].stopGame();
-        activePolarbearSessions[roomID] = null;
-        delete activePolarbearSessions[roomID];
-        const index = activePolarbearGames.indexOf(roomID);
-        activePolarbearGames.splice(index, 1);
         sendMessage(bodyMessage, 'Stopped your game.');
       } else {
         console.log('Nothing to stop.');
         sendMessage(bodyMessage, 'No game to stop.');
       }
       resolve({ code: 200, msg: 'OK!' });
+      break;
+    }
+    case '/finishGame': {
+      activePolarbearSessions[roomID] = null;
+      delete activePolarbearSessions[roomID];
+      const index = activePolarbearGames.indexOf(roomID);
+      activePolarbearGames.splice(index, 1);
+      console.log('removed game from alive array');
       break;
     }
     case '/test': {

@@ -63,7 +63,7 @@ router.get('/', (req, res) => {
 router.post(`/webhook/${teleConfig.token}`, async (req, res) => {
   try {
     console.log('received a webhook from telegram!');
-    console.log(req.body);
+    // console.log(req.body);
     await rethink.insertIntoWebhook(req.body);
     if (req.body.edited_message) {
       req.body.message = req.body.edited_message;
@@ -82,6 +82,7 @@ router.post(`/webhook/${teleConfig.token}`, async (req, res) => {
       if (botCommand) {
         statusRes = await polarbear(command, bodyMessage, args);
       }
+      console.log('chat id: ', bodyMessage.chat.id);
       console.log('text: ', text);
       console.log('command: ', command);
       console.log('args: ', args);

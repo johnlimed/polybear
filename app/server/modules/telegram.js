@@ -18,17 +18,36 @@ createReplyKeyboardMarkup = keyboardButtonOptions => new Promise(async (resolve)
 
 initializeWebhook = () => {
   console.log('Setting up telegram webhook!');
-  const payload = { url: `https://a8a37ef6.ngrok.io/webhook/${teleConfig.token}` };
-  const uri = `https://api.telegram.org/bot${teleConfig.token}/setWebhook`;
+  const payload = { url: teleConfig.webhookURI };
+  const uri = teleConfig.setWebhook;
   httpsrequests.post(payload, uri);
 };
 
 sendMessage = (chatID, msg, keyboard) => {
   const payload = { chat_id: chatID, text: msg, reply_markup: keyboard };
-  const uri = `https://api.telegram.org/bot${teleConfig.token}/sendMessage`;
+  const uri = teleConfig.sendMsgURI;
+  httpsrequests.post(payload, uri);
+};
+
+sendGameEnd = (chatID) => {
+  console.log('simulating end command from telegram');
+  const payload = {
+    message: {
+      chat: {
+        id: chatID,
+      },
+      entities: [{ type: 'bot_command' }],
+      text: '/finishGame',
+      from: {
+        username: 'poly_polarbear_bot',
+      },
+    },
+  };
+  const uri = teleConfig.webhookURI;
   httpsrequests.post(payload, uri);
 };
 
 module.exports.createReplyKeyboardMarkup = createReplyKeyboardMarkup;
 module.exports.initializeWebhook = initializeWebhook;
 module.exports.sendMessage = sendMessage;
+module.exports.sendGameEnd = sendGameEnd;
