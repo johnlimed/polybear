@@ -101,17 +101,32 @@ module.exports = (command, bodyMessage) => new Promise(async (resolve, reject) =
       if (alreadyRunningGame(roomID)) {
         console.log('Found a game running!');
         sendMessage(bodyMessage, 'Polar bears are already gathering to start a game. /join that one!');
-        resolve({ code: 200, msg: 'OK!' });
       } else {
         const polarbearGame = createGame(roomID, name, sender.id);
         polarbearGame.startTimer('join');
         sendMessage(bodyMessage, `${name} has started and joined a game! Calling all Polarbears to /join! You have ${polarbearGame.getTimerDuration('join')} minutes to join!`);
-        resolve({ code: 200, msg: 'OK!' });
       }
+      resolve({ code: 200, msg: 'OK!' });
       break;
     }
     case '/startgame': {
       sendMessage(bodyMessage, `No ${name}`);
+      resolve({ code: 200, msg: 'OK!' });
+      break;
+    }
+    case '/stop': {
+      if (alreadyRunningGame(roomID)) {
+        console.log('Stopping your game.');
+        activePolarbearSessions[roomID].stopGame();
+        activePolarbearSessions[roomID] = null;
+        delete activePolarbearSessions[roomID];
+        const index = activePolarbearGames.indexOf(roomID);
+        activePolarbearGames.splice(index, 1);
+        sendMessage(bodyMessage, 'Stopped your game.');
+      } else {
+        console.log('Nothing to stop.');
+        sendMessage(bodyMessage, 'No game to stop.');
+      }
       resolve({ code: 200, msg: 'OK!' });
       break;
     }

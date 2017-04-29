@@ -18,7 +18,7 @@ createReplyKeyboardMarkup = keyboardButtonOptions => new Promise(async (resolve)
 
 initializeWebhook = () => {
   console.log('Setting up telegram webhook!');
-  const payload = { url: `https://37f6f72c.ngrok.io/webhook/${teleConfig.token}` };
+  const payload = { url: `https://a8a37ef6.ngrok.io/webhook/${teleConfig.token}` };
   const uri = `https://api.telegram.org/bot${teleConfig.token}/setWebhook`;
   httpsrequests.post(payload, uri);
 };

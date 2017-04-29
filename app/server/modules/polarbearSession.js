@@ -28,6 +28,19 @@ module.exports = function PolarbearSession(chatID) {
     resolve(receiverIDs);
   });
 
+  joinPlayersNames = nameList => new Promise((resolve) => {
+    let string;
+    for (let i = 0; i < nameList.length; i += 1) {
+      if (i > 0 && (i === nameList.length - 1)) {
+        string += 'and ';
+      } else if (i > 0) {
+        string += ', ';
+      }
+      killed += `${nameList[i]} `;
+    }
+    resolve(string);
+  });
+
   notifyAssignedRoles = () => {
     this.aliveVillagers.map((villager) => {
       console.log(`villager: ${villager} ${this.players[villager].id} ${this.players[villager].role}`);
@@ -36,7 +49,8 @@ module.exports = function PolarbearSession(chatID) {
     });
     this.alivePolarbears.map((polarbear) => {
       console.log(`polarbear: ${polarbear} ${this.players[polarbear].id} ${this.players[polarbear].role}`);
-      const msg = `You are a ${this.players[polarbear].role}!`;
+      const polarbears = joinPlayerNames(this.alivePolarbears);
+      const msg = `You are a ${this.players[polarbear].role}! The polarbears are: ${polarbears}`;
       return Telegram.sendMessage(this.players[polarbear].id, msg);
     });
     this.aliveLovers.map((lover) => {
@@ -334,19 +348,20 @@ module.exports = function PolarbearSession(chatID) {
       resolve();
     });
   });
-  villagersPhase = (playersKilled) => new Promise((resolve) => {
+  villagersPhase = playersKilled => new Promise(async (resolve) => {
     this.status = 'villagers';
     this.votingArray = [];
     const voteCount = {};
     let mostVotes;
     let mostVotesCount = 0;
-    let killed = '';
-    for (let i = 0; i < playersKilled.length; i += 1) {
-      if (i > 0) {
-        killed += 'and ';
-      }
-      killed += `${playersKilled[i]} `;
-    }
+    const killed = await joinPlayersNames(playersKilled);
+    // let killed = '';
+    // for (let i = 0; i < playersKilled.length; i += 1) {
+    //   if (i > 0) {
+    //     killed += 'and ';
+    //   }
+    //   killed += `${playersKilled[i]} `;
+    // }
     notifyPlayers(`Daybreaks! You wake up to find that ${killed} were found lying in a pool of blood!.`);
     notifyPlayers(`The whole village congregates. You have ${this.getTimerDuration('action')} min to decide who could be a polarbear. Vote to execute the polarbear!`);
     notifyPlayersWithAction('Who do you want to vote for?', 'all', [].concat(this.aliveVillagers, this.alivePolarbears));
@@ -367,7 +382,6 @@ module.exports = function PolarbearSession(chatID) {
           }
         }
       }
-      // TODO: send message to all about selection
       notifyPlayers(`The village has spoken, ${mostVotes} has been executed.`);
       resolve(mostVotes);
     });
@@ -388,6 +402,10 @@ module.exports = function PolarbearSession(chatID) {
     }
     resolve('no winner');
   });
+  endOfNight = async (playersToKill) => {
+    const promise = playersToKill.map(playerName => this.eliminatePlayer(playerName));
+    await Promise.all(promise);
+  };
   this.startGame = async () => {
     notifyPlayers('The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all.');
     this.assignRoles();
@@ -397,16 +415,22 @@ module.exports = function PolarbearSession(chatID) {
       const playerSelectedByPolarbears = await this.polarbearPhase();
       await this.littleGirlPhase();
       await this.doctorPhase(playerSelectedByPolarbears, playersToKill);
-      // elimination decision
-      // TODO: eliminate player if necessary
+      await endOfNight(playersToKill);
       const killedByVillagers = await this.villagersPhase(playersToKill);
-      // TODO: eliminate palyer
+      this.eliminatePlayer(killedByVillagers);
       this.winner = await this.checkForWinner();
     }
     this.endGame();
   };
   this.endGame = () => {
-    notifyPlayers('Dawn breaks, and the Polarbears have overrun the village. Polarbears win!');
+    if (this.winner === 'Polarbears') {
+      notifyPlayers('Dawn breaks, and the Polarbears have overrun the village. Polarbears win!');
+    } else if (this.winner === 'Villagers') {
+      notifyPlayers('Dawn breaks, and the Villagers are still awake. Villagers win!');
+    } else if (this.winner === 'Lovers') {
+      notifyPlayers('Dawn breaks, love conquered all. Lovers win!');
+    }
+    this.getPlayerList();
   };
   this.forceStart = () => {
     if (enoughPlayers()) {
@@ -417,6 +441,11 @@ module.exports = function PolarbearSession(chatID) {
       notifyPlayers('You dont have enough Polarbears. Cannot start game. Wait for more Polarbears to /join.');
     }
   };
+  this.stopGame = () => {
+    // stop timers
+    this.stopTimer('action');
+    this.stopTimer('join');
+  }
   this.stopTimer = (timerName) => { this.timers[timerName].timer.stop(); };
   this.startTimer = (timerName) => { this.timers[timerName].timer.start(this.timers[timerName].duration); };
   this.restartTimer = (timerName) => { this.timers[timerName].timer = new Timer(this.timers[timerName].duration / 60); };
