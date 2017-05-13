@@ -25,8 +25,8 @@ test('Simulating 5 players joining the session', (assert) => {
   assert.end();
 });
 
-test('Assigning of roles', (assert) => {
-  gameSession.assignRoles();
+test('Assigning of roles', async (assert) => {
+  await gameSession.assignRoles();
   assert.notEqual(gameSession.players.player1.role, '', `player1 has a role of: ${gameSession.players.player1.role}`);
   assert.notEqual(gameSession.players.player2.role, '', `player2 has a role of: ${gameSession.players.player2.role}`);
   assert.notEqual(gameSession.players.player3.role, '', `player3 has a role of: ${gameSession.players.player3.role}`);

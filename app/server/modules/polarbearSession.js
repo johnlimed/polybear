@@ -9,12 +9,12 @@ module.exports = function PolarbearSession(chatID) {
     const receiverIDs = [];
     if (receiver === 'all') {
       // receiverIDs.push(this.id);
-      this.alivePolarbears.map(polarbear => receiverIDs.push(this.players[polarbear.name].id));
-      this.aliveVillagers.map(villager => receiverIDs.push(this.players[villager.name].id));
+      this.alivePolarbears.map(polarbear => receiverIDs.push(this.players[polarbear].id));
+      this.aliveVillagers.map(villager => receiverIDs.push(this.players[villager].id));
     } else if (receiver === 'polarbears') {
       this.alivePolarbears.map((polarbear) => {
         console.log(polarbear);
-        return receiverIDs.push(this.players[polarbear.name].id);
+        return receiverIDs.push(this.players[polarbear].id);
       });
       // for (let i = 0; i < this.alivePolarbears.length; i += 1) {
       //   receiverIDs.push(this.players[this.alivePolarbears[i].name].id);
@@ -45,29 +45,31 @@ module.exports = function PolarbearSession(chatID) {
   });
 
   this.notifyAssignedRoles = async () => {
-    const villagerPromise = this.aliveVillagers.map((villager) => {
-      console.log(`villager: ${villager} ${this.players[villager].id} ${this.players[villager].role}`);
-      const msg = `You are a ${this.players[villager].role}!`;
-      return Telegram.sendMessage(this.players[villager].id, msg);
-    });
-    const polarbearPromise = this.alivePolarbears.map((polarbear) => {
-      console.log(`polarbear: ${polarbear} ${this.players[polarbear].id} ${this.players[polarbear].role}`);
-      const polarbears = this.joinPlayersNames(this.alivePolarbears);
-      const msg = `You are a ${this.players[polarbear].role}! The polarbears are: ${polarbears}`;
-      return Telegram.sendMessage(this.players[polarbear].id, msg);
-    });
-    const loversPromise = this.aliveLovers.map((lover) => {
-      console.log(`lover: ${lover}`);
-      const msg = `And you are in love with: ${JSON.stringify(this.aliveLovers, null, 2)}!`;
-      return Telegram.sendMessage(this.players[lover].id, msg);
-    });
-    await Promise.all(loversPromise, villagerPromise, polarbearPromise);
+    if (!this.isTest) {
+      const villagerPromise = this.aliveVillagers.map((villager) => {
+        console.log(`villager: ${villager} ${this.players[villager].id} ${this.players[villager].role}`);
+        const msg = `You are a ${this.players[villager].role}!`;
+        return Telegram.sendMessage(this.players[villager].id, msg);
+      });
+      const polarbearPromise = this.alivePolarbears.map((polarbear) => {
+        console.log(`polarbear: ${polarbear} ${this.players[polarbear].id} ${this.players[polarbear].role}`);
+        const polarbears = this.joinPlayersNames(this.alivePolarbears);
+        const msg = `You are a ${this.players[polarbear].role}! The polarbears are: ${polarbears}`;
+        return Telegram.sendMessage(this.players[polarbear].id, msg);
+      });
+      const loversPromise = this.aliveLovers.map((lover) => {
+        console.log(`lover: ${lover}`);
+        const msg = `And you are in love with: ${JSON.stringify(this.aliveLovers, null, 2)}!`;
+        return Telegram.sendMessage(this.players[lover].id, msg);
+      });
+      await Promise.all(loversPromise, villagerPromise, polarbearPromise);
+    }
   };
 
   this.notifyPlayers = async (msg, receiver) => {
     try {
-      const receiverIDs = await this.generateReceivers(receiver);
       if (!this.isTest) {
+        const receiverIDs = await this.generateReceivers(receiver);
         console.log(`sending messages to: ${JSON.stringify(receiverIDs)}`);
         receiverIDs.map(chatRoomID => Telegram.sendMessage(chatRoomID, msg));
       }
@@ -229,30 +231,31 @@ module.exports = function PolarbearSession(chatID) {
     this.players[this.lovers[0]].lover = this.players[this.lovers[1]].name;
     this.players[this.lovers[1]].lover = this.players[this.lovers[0]].name;
   };
-  this.assignRoles = () => {
-    const numPlayers = this.playerNameList.length;
-    this.numPolarbears = Math.floor((numPlayers - 2) / 2);
-    this.numVillagers = numPlayers - this.numPolarbears;
-    // this.numPolarbears = 1;
-    // this.numVillagers = 0;
-    // this.playLovers = false;
-    const uninitializedPlayers = this.playerNameList.slice(0);
-    // set Polarbears
-    for (let i = 0; i < this.numPolarbears; i += 1) {
-      this.setPlayer('Polar bear', 'Polarbears', uninitializedPlayers);
+  this.assignRoles = () => new Promise(async (resolve, reject) => {
+    // generate roles first
+    try {
+      const numPlayers = this.playerNameList.length;
+      this.numPolarbears = Math.floor((numPlayers - 2) / 2);
+      this.numVillagers = numPlayers - this.numPolarbears;
+      const polarbearsArray = new Array(this.numPolarbears).fill(0);
+      const villagersArray = new Array(this.numVillagers - specialVillagers.length).fill(0);
+      const uninitializedPlayers = this.playerNameList.slice(0);
+      const promisePolar = polarbearsArray.map(() => this.setPlayer('Polar bear', 'Polarbears', uninitializedPlayers));
+      await Promise.all(promisePolar);
+      const promiseSpecial = specialVillagers.map(specialVillager => this.setPlayer(specialVillager, 'Villagers', uninitializedPlayers));
+      await Promise.all(promiseSpecial);
+      const promiseVillager = villagersArray.map(() => this.setPlayer('Villager', 'Villagers', uninitializedPlayers));
+      await Promise.all(promiseVillager);
+      if (this.playLovers) {
+        this.setLovers();
+      }
+      resolve();
+    } catch (err) {
+      console.log('error caught while trying to asign roles');
+      console.log(err);
+      reject(err);
     }
-    // set special villagers
-    for (let k = 0; k < specialVillagers.length; k += 1) {
-      this.setPlayer(specialVillagers[k], 'Villagers', uninitializedPlayers);
-    }
-    // set Villagers
-    for (let j = 0; j < this.numVillagers - 2; j += 1) {
-      this.setPlayer('Villager', 'Villagers', uninitializedPlayers);
-    }
-    if (this.playLovers) {
-      this.setLovers();
-    }
-  };
+  });
   this.getPlayerList = () => {
     let msg = 'Players that are in game:\n';
     for (let i = 0; i < this.playerNameList.length; i += 1) {
@@ -403,7 +406,7 @@ module.exports = function PolarbearSession(chatID) {
   };
   this.startGame = async () => {
     this.notifyPlayers('The night has come, Polarbears get ready for the hunt! Villagers hide your wives, hide your kids, find the polarbears but beware for love conquers all.');
-    this.assignRoles();
+    await this.assignRoles();
     await this.notifyAssignedRoles();
     while (this.status !== 'finished') {
       const playersToKill = [];
@@ -418,14 +421,16 @@ module.exports = function PolarbearSession(chatID) {
     this.endGame();
   };
   this.endGame = () => {
-    if (this.winner === 'Polarbears') {
-      this.notifyPlayers('Dawn breaks, and the Polarbears have overrun the village. Polarbears win!');
-    } else if (this.winner === 'Villagers') {
-      this.notifyPlayers('Dawn breaks, and the Villagers are still awake. Villagers win!');
-    } else if (this.winner === 'Lovers') {
-      this.notifyPlayers('Dawn breaks, love conquered all. Lovers win!');
+    if (!this.isTest) {
+      if (this.winner === 'Polarbears') {
+        this.notifyPlayers('Dawn breaks, and the Polarbears have overrun the village. Polarbears win!');
+      } else if (this.winner === 'Villagers') {
+        this.notifyPlayers('Dawn breaks, and the Villagers are still awake. Villagers win!');
+      } else if (this.winner === 'Lovers') {
+        this.notifyPlayers('Dawn breaks, love conquered all. Lovers win!');
+      }
+      this.getPlayerList();
     }
-    this.getPlayerList();
     this.stopGame();
   };
   this.forceStart = () => {
@@ -440,7 +445,9 @@ module.exports = function PolarbearSession(chatID) {
   this.stopGame = () => {
     this.stopTimer('action');
     this.stopTimer('join');
-    Telegram.sendGameEnd();
+    if (!this.isTest) {
+      Telegram.sendGameEnd();
+    }
   };
   this.stopTimer = (timerName) => { this.timers[timerName].timer.stop(); };
   this.startTimer = (timerName) => { this.timers[timerName].timer.start(this.timers[timerName].duration); };
