@@ -13,7 +13,6 @@ runRethink = () => new Promise((resolve, reject) => {
     if (err) {
       console.log('Could not open a connection to initialize the database');
       console.log(err.message);
-			conn.close();
       process.exit(1);
     }
     rethink.tableList().run(conn, (listErr, res) => {

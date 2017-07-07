@@ -6,7 +6,7 @@
   "scripts": {
     "start": "NODE_ENV=dev nodemon",
     "production": "NODE_ENV=prod nodemon",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tape tests/*"
   },
   "repository": {
     "type": "git",

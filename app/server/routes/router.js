@@ -1,6 +1,6 @@
 const express = require('express');
 const teleConfig = require('../config/telegramConfig');
-const polarbear = require('../modules/polarbear');
+const commandSwitch = require('../modules/commandSwitch');
 const httpsrequests = require('../modules/httpsrequests');
 const rethink = require('../modules/rethink');
 
@@ -80,7 +80,7 @@ router.post(`/webhook/${teleConfig.token}`, async (req, res) => {
       const command = inputs[0];
       const args = inputs.splice(1, inputs.length);
       if (botCommand) {
-        statusRes = await polarbear(command, bodyMessage, args);
+        statusRes = await commandSwitch(command, bodyMessage, args);
       }
       console.log('chat id: ', bodyMessage.chat.id);
       console.log('text: ', text);

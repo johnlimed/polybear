@@ -1,6 +1,6 @@
 module.exports = {
   dev: {
-    host: 'localhost',
+    host: 'genesis',
     port: 28015,
     db: 'test',
   },
